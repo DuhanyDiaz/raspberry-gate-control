@@ -1,0 +1,102 @@
+/* Colores Institucionales FIUSAC */
+:root {
+  --verde-fiusac: #2a7a43;
+  /* El verde de tu imagen */
+  --verde-oscuro: #1d572e;
+  --blanco: #ffffff;
+  --gris-texto: #4a4a4a;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f4f4;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* --- ESTILOS DE LA BARRA SUPERIOR (NAVBAR) --- */
+.navbar {
+  background-color: var(--blanco);
+  height: 120px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 50px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  /* Sombrita elegante */
+  z-index: 10;
+}
+
+.navbar-logo h2 {
+  color: var(--gris-texto);
+  margin: 0;
+  font-size: 24px;
+}
+
+.navbar-logo span {
+  color: var(--verde-fiusac);
+  font-weight: 400;
+}
+
+.navbar-links a {
+  text-decoration: none;
+  color: var(--gris-texto);
+  font-weight: 600;
+  margin-left: 30px;
+  font-size: 16px;
+  transition: color 0.3s;
+}
+
+.navbar-links a:hover {
+  color: var(--verde-fiusac);
+}
+
+/* --- ESTILOS DEL FONDO VERDE --- */
+.main-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Degradado: empieza suave/transparente a la izquierda y se hace verde fuerte a la derecha */
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.1) 0%, rgba(42, 122, 67, 0.8) 60%, rgba(29, 87, 46, 0.95) 100%), url('https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=1000') no-repeat center center;
+  background-size: cover;
+  padding: 20px;
+}
+
+.keypad-section {
+  text-align: center;
+  color: var(--blanco);
+  max-width: 600px;
+}
+
+.keypad-section h1 {
+  font-size: 45px;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.keypad-section p {
+  font-size: 18px;
+  margin-bottom: 40px;
+}
+
+.placeholder-teclado {
+  background-color: var(--blanco);
+  color: var(--verde-fiusac);
+  padding: 50px;
+  border-radius: 30px;
+  font-size: 20px;
+  font-weight: bold;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.logo-imagen {
+  height: 90px;
+  /* Ajusta este número según qué tan grande quieras el logo */
+  width: auto;
+}
