@@ -1,10 +1,59 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './AdminPanel.css'
 
 export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada }) {
   const [usuario, setUsuario] = useState('')
   const [password, setPassword] = useState('')
   const [pestañaActiva, setPestañaActiva] = useState('solicitudes') // 'solicitudes' o 'historial'
+
+  // Datos simulados de estudiantes que llenaron el formulario
+  const [solicitudes, setSolicitudes] = useState([])
+
+  // Función para descargar las solicitudes desde Python
+  const cargarSolicitudes = async () => {
+    try {
+      const respuesta = await fetch("http://127.0.0.1:8000/api/solicitudes/pendientes")
+      if (respuesta.ok) {
+        const datos = await respuesta.json()
+        setSolicitudes(datos)
+      }
+    } catch (error) {
+      console.error("Error al cargar solicitudes:", error)
+    }
+  }
+
+  // Cargar datos automáticamente al iniciar sesión
+  useEffect(() => {
+    if (sesionIniciada) {
+      cargarSolicitudes()
+    }
+  }, [sesionIniciada])
+
+  // Botón Aprobar
+  const manejarAprobar = async (id) => {
+    try {
+      const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/aprobar`, { method: "PUT" })
+      if (respuesta.ok) {
+        alert("¡Solicitud aprobada! El correo simulado fue enviado. Revisa tu terminal de Python.")
+        cargarSolicitudes() // Recargamos la tabla para que desaparezca
+      }
+    } catch (error) {
+      alert("Error al aprobar.")
+    }
+  }
+
+  // Botón Denegar
+  const manejarDenegar = async (id) => {
+    try {
+      const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/denegar`, { method: "PUT" })
+      if (respuesta.ok) {
+        alert("Solicitud denegada.")
+        cargarSolicitudes()
+      }
+    } catch (error) {
+      alert("Error al denegar.")
+    }
+  }
 
   const manejarLogin = (e) => {
     e.preventDefault()
@@ -49,13 +98,6 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
       </div>
     )
   }
-
-  // Datos simulados de estudiantes que llenaron el formulario
-  const solicitudes = [
-    { id: 1, nombres: 'Juan Pérez', carne: '202100123', dpi: '1234567890101', dias: 'Lunes, Jueves', horarios: '10:00 - 12:00' },
-    { id: 2, nombres: 'María Gómez', carne: '202011222', dpi: '9876543210101', dias: 'Viernes', horarios: '14:00 - 16:00' },
-    { id: 3, nombres: 'Carlos López', carne: '202345091', dpi: '4561237890101', dias: 'Martes', horarios: '08:00 - 10:00' }
-  ]
 
   // Datos simulados del historial de quién entró y a qué hora
   const historial = [
@@ -116,18 +158,18 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
             <tbody>
               {solicitudes.map(sol => (
                 <tr key={sol.id}>
-                  <td>{sol.nombres}</td>
+                  <td>{sol.nombre}</td>
                   <td>{sol.carne}</td>
                   <td>{sol.dpi}</td>
-                  <td>{sol.dias}</td>
-                  <td>{sol.horarios}</td>
+                  <td>{sol.dias_permitidos}</td>
+                  <td>{sol.hora_inicio} - {sol.hora_fin}</td>
                   <td>
-                    <button className="pushable approve" onClick={() => alert('Código generado para ' + sol.nombres)}>
+                    <button className="pushable approve" onClick={() => manejarAprobar(sol.id)}>
                       <span className="shadow"></span>
                       <span className="edge"></span>
                       <span className="front">Aprobar</span>
                     </button>
-                    <button className="pushable deny">
+                    <button className="pushable deny" onClick={() => manejarDenegar(sol.id)}>
                       <span className="shadow"></span>
                       <span className="edge"></span>
                       <span className="front">Denegar</span>
