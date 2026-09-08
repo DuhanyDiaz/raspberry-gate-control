@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import Swal from 'sweetalert2'
 import './App.css'
 import logoFiusac from './assets/EMI-FIUSAC.png'
 
@@ -22,10 +23,16 @@ function App() {
   const [fondoActual, setFondoActual] = useState(0)
   const [vistaActiva, setVistaActiva] = useState('teclado') // Puede ser 'teclado' o 'registro'
   const [adminLoggedIn, setAdminLoggedIn] = useState(false) // Control global de la sesión del admin
+  const [menuAbierto, setMenuAbierto] = useState(false) // Control del menú hamburguesa
 
   const irAInicio = () => {
     if (vistaActiva === 'admin' && adminLoggedIn) {
-      alert("Por seguridad, debes cerrar sesión antes de salir del panel de administración.");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Atención',
+        text: 'Por seguridad, debes cerrar sesión antes de salir del panel de administración.',
+        confirmButtonColor: '#2a7a43'
+      });
       return;
     }
     setVistaActiva('teclado');
@@ -41,7 +48,7 @@ function App() {
 
   return (
     <div className="app-container">
-
+      
       {/* Carrusel de fondos animados (Se manejan en CSS) */}
       <div className="background-slider">
         {imagenesFondo.map((img, index) => (
@@ -61,23 +68,45 @@ function App() {
           {/* Aquí usamos la imagen que importamos arriba */}
           <img src={logoFiusac} alt="Logo FIUSAC EMI" className="logo-imagen" />
         </div>
+        
+        {/* Botón de hamburguesa (solo visible en móviles) */}
+        <button 
+          className="hamburger-btn" 
+          onClick={() => setMenuAbierto(!menuAbierto)}
+        >
+          ☰
+        </button>
 
-        <div className="navbar-links">
+        <div className={`navbar-links ${menuAbierto ? 'open' : ''}`}>
           <a href="#" onClick={(e) => { 
             e.preventDefault(); 
             if (vistaActiva === 'admin' && adminLoggedIn) {
-              alert("Por seguridad, debes cerrar sesión antes de salir del panel de administración.");
+              Swal.fire({
+                icon: 'warning',
+                title: 'Atención',
+                text: 'Por seguridad, debes cerrar sesión antes de salir del panel de administración.',
+                confirmButtonColor: '#2a7a43'
+              });
+              setMenuAbierto(false);
               return;
             }
             setVistaActiva('teclado');
+            setMenuAbierto(false);
           }}>Inicio</a>
           <a href="#" onClick={(e) => { 
             e.preventDefault(); 
             if (vistaActiva === 'admin' && adminLoggedIn) {
-              alert("Por seguridad, debes cerrar sesión antes de salir del panel de administración.");
+              Swal.fire({
+                icon: 'warning',
+                title: 'Atención',
+                text: 'Por seguridad, debes cerrar sesión antes de salir del panel de administración.',
+                confirmButtonColor: '#2a7a43'
+              });
+              setMenuAbierto(false);
               return;
             }
             setVistaActiva('admin');
+            setMenuAbierto(false);
           }}>Administración</a>
         </div>
       </nav>

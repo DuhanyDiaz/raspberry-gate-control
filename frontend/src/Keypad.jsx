@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Swal from 'sweetalert2'
 import './Keypad.css'
 
 export default function Keypad() {
@@ -20,7 +21,14 @@ export default function Keypad() {
   // Enviar el PIN
   const handleSubmit = () => {
     if (pin.length > 0) {
-      alert(`Validando PIN en la nube: ${pin}`)
+      Swal.fire({
+        icon: 'info',
+        title: 'Validando...',
+        text: `Consultando código: ${pin}`,
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true
+      })
       setPin('') // Limpiamos después de enviar
     }
   }

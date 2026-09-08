@@ -17,6 +17,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* --- ESTILOS DE LA BARRA SUPERIOR (NAVBAR) --- */
@@ -54,6 +55,21 @@ body {
 
 .navbar-links a:hover {
   color: var(--verde-fiusac);
+}
+
+/* Botón Hamburguesa oculto en PC */
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: var(--verde-fiusac);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.hamburger-btn:active {
+  transform: scale(0.9);
 }
 
 /* --- ESTILOS DEL CONTENIDO --- */
@@ -141,4 +157,65 @@ body {
   /* El filtro verde institucional que pediste */
   background: linear-gradient(to right, rgba(255, 255, 255, 0.1) 0%, rgba(42, 122, 67, 0.8) 60%, rgba(29, 87, 46, 0.95) 100%);
   z-index: 1;
+}
+
+/* --- RESPONSIVIDAD (MÓVILES) --- */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 15px 20px;
+    height: auto;
+    flex-direction: row; /* Vuelve a ser fila para que el logo y el botón estén lado a lado */
+    justify-content: space-between;
+    gap: 0;
+    position: relative; /* Para que el menú colgante se posicione desde aquí */
+  }
+  
+  .hamburger-btn {
+    display: block; /* Se muestra en móviles */
+  }
+  
+  .logo-imagen {
+    height: 40px;
+    max-width: 100%;
+    object-fit: contain;
+  }
+  
+  .navbar-links {
+    display: none; /* Oculto por defecto */
+    position: absolute;
+    top: 100%; /* Justo debajo de la navbar */
+    left: 0;
+    width: 100%;
+    background-color: var(--blanco);
+    flex-direction: column;
+    padding: 20px 0;
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    z-index: 9;
+  }
+  
+  .navbar-links.open {
+    display: flex; /* Se muestra si tiene la clase open */
+  }
+
+  .navbar-links a {
+    margin: 10px 0;
+    font-size: 16px;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .keypad-section {
+    padding-top: 20px;
+  }
+  
+  .keypad-section h1 {
+    font-size: 28px;
+    margin-top: 0;
+  }
+  
+  .keypad-section p {
+    font-size: 14px;
+    margin-bottom: 20px;
+    padding: 0 15px;
+  }
 }
