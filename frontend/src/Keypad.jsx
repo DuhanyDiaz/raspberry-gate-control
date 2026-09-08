@@ -19,16 +19,44 @@ export default function Keypad() {
   }
 
   // Enviar el PIN
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (pin.length > 0) {
       Swal.fire({
-        icon: 'info',
         title: 'Validando...',
-        text: `Consultando código: ${pin}`,
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true
+        text: 'Conectando con el servidor',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading()
+        }
       })
+
+      try {
+        const respuesta = await fetch("http://127.0.0.1:8000/api/accesos/validar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pin: pin })
+        })
+
+        if (respuesta.ok) {
+          const datos = await respuesta.json()
+          Swal.fire({
+            icon: 'success',
+            title: '¡Acceso Concedido!',
+            text: `Bienvenido(a), ${datos.nombre}`,
+            confirmButtonColor: '#2a7a43'
+          })
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Acceso Denegado',
+            text: 'PIN incorrecto o inactivo.',
+            confirmButtonColor: '#ff6b6b'
+          })
+        }
+      } catch (error) {
+        Swal.fire('Error', 'No se pudo conectar con el servidor', 'error')
+      }
+
       setPin('') // Limpiamos después de enviar
     }
   }
