@@ -57,3 +57,45 @@ def denegar_solicitud(solicitud_id: int, db: Session = Depends(get_db)):
     if not solicitud:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
     return {"mensaje": "Solicitud denegada correctamente"}
+
+# 5. Ruta para Validar PIN en el teclado
+@app.post("/api/accesos/validar")
+def validar_pin(datos: schemas.PINValidation, db: Session = Depends(get_db)):
+    solicitud = crud.validate_pin(db, pin=datos.pin)
+    
+    if solicitud:
+        # Registramos éxito
+        crud.log_access(db, carne=solicitud.carne, exito=True)
+        return {"mensaje": "Acceso Concedido", "nombre": solicitud.nombre}
+    else:
+        # Registramos fallo (no sabemos de quién es el PIN porque es incorrecto)
+        crud.log_access(db, carne="PIN_INVÁLIDO", exito=False)
+        raise HTTPException(status_code=401, detail="PIN incorrecto o inactivo")
+
+# 6. Ruta para obtener el Historial de Accesos en el Panel
+@app.get("/api/accesos/historial")
+def obtener_historial(db: Session = Depends(get_db)):
+    historial_db = crud.get_history(db)
+    
+    # Transformamos el modelo de DB al formato que espera el Frontend
+    respuesta = []
+    for reg in historial_db:
+        # Si fue exitoso, buscamos a quién pertenecía el carné para mostrar el nombre.
+        # Por optimización (Fase 3), solo pondremos el carné si fue exitoso,
+        # o podríamos hacer un JOIN. Para simplificar, buscaremos el nombre:
+        usuario = "Desconocido"
+        accion = "Intento Fallido (PIN Incorrecto)"
+        
+        if reg.fue_exitoso:
+            sol = db.query(models.AccessRequest).filter(models.AccessRequest.carne == reg.carne_usado).first()
+            usuario = sol.nombre if sol else reg.carne_usado
+            accion = "Ingreso con PIN"
+
+        respuesta.append({
+            "id": reg.id,
+            "nombres": usuario,
+            "accion": accion,
+            "fecha": reg.fecha_hora.strftime("%d/%m/%Y %H:%M:%S")
+        })
+        
+    return respuesta
