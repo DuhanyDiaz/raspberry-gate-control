@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Swal from 'sweetalert2'
 import './RegistroForm.css'
 
 export default function RegistroForm({ onVolver }) {
@@ -23,7 +24,12 @@ export default function RegistroForm({ onVolver }) {
   // Función cuando le dan "Enviar Solicitud"
   const enviarFormulario = (e) => {
     e.preventDefault() // Evita que la página se recargue
-    alert('Tu solicitud ha sido enviada al administrador. Recibirás un correo cuando sea aprobada.')
+    Swal.fire({
+      icon: 'success',
+      title: '¡Enviado!',
+      text: 'Tu solicitud ha sido enviada al administrador. Recibirás un correo cuando sea aprobada.',
+      confirmButtonColor: '#2a7a43'
+    })
     // Aquí en la Fase 2, conectaremos esto con FastAPI y la base de datos real.
     onVolver() // Regresa a la pantalla del teclado
   }
