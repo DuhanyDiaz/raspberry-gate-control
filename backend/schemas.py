@@ -39,3 +39,16 @@ class AdminCreate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+# --- SCHEMAS PARA EL TECLADO Y EL HISTORIAL ---
+class PINValidation(BaseModel):
+    pin: str
+
+class AccessHistoryResponse(BaseModel):
+    id: int
+    nombres: str
+    accion: str
+    fecha: str
+
+    class Config:
+        from_attributes = True
