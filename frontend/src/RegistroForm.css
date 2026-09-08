@@ -1,0 +1,95 @@
+.form-container {
+  background: rgba(255, 255, 255, 0.15); /* Vidrio esmerilado para que combine con el teclado */
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  color: white;
+  animation: fadeIn 0.4s ease-out; /* Animación para cuando aparece */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.form-container h2 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 25px;
+  font-weight: 500;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.input-group {
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.row-group {
+  display: flex;
+  gap: 15px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.2);
+  color: white;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.3s;
+}
+
+.input-group input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.input-group input:focus {
+  border-color: #51cf66; /* Verde al seleccionar */
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 25px;
+  gap: 15px;
+}
+
+.form-buttons button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-cancel {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.btn-submit {
+  background: var(--verde-fiusac);
+  color: white;
+}
+
+.btn-submit:hover {
+  background: var(--verde-oscuro);
+}

@@ -56,16 +56,15 @@ body {
   color: var(--verde-fiusac);
 }
 
-/* --- ESTILOS DEL FONDO VERDE --- */
+/* --- ESTILOS DEL CONTENIDO --- */
 .main-content {
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  /* Degradado: empieza suave/transparente a la izquierda y se hace verde fuerte a la derecha */
-  background: linear-gradient(to right, rgba(255, 255, 255, 0.1) 0%, rgba(42, 122, 67, 0.8) 60%, rgba(29, 87, 46, 0.95) 100%), url('https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=1000') no-repeat center center;
-  background-size: cover;
   padding: 20px;
+  /* Fondo transparente porque el slider está detrás */
+  background: transparent;
 }
 
 .keypad-section {
@@ -99,4 +98,47 @@ body {
   height: 90px;
   /* Ajusta este número según qué tan grande quieras el logo */
   width: auto;
+}
+
+/* --- ANIMACIONES DE FONDO ROTATIVO (CARRUSEL) --- */
+.background-slider {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  overflow: hidden;
+  background-color: #000;
+}
+
+.bg-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  /* Empieza invisible y un poco "acerada" (zoom) */
+  opacity: 0;
+  transform: scale(1.1);
+  /* Transición: 2s para aparecer/desaparecer y 10s para el zoom */
+  transition: opacity 2s ease-in-out, transform 10s linear;
+}
+
+.bg-image.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.bg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* El filtro verde institucional que pediste */
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.1) 0%, rgba(42, 122, 67, 0.8) 60%, rgba(29, 87, 46, 0.95) 100%);
+  z-index: 1;
 }
