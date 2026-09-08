@@ -9,6 +9,7 @@ import imgEstudiante from './assets/ESTUDIANTE.png'
 import imgUsac from './assets/USAC.png'
 import Keypad from './Keypad'
 import RegistroForm from './RegistroForm'
+import AdminPanel from './AdminPanel'
 
 const imagenesFondo = [
   imgT3,
@@ -20,6 +21,15 @@ const imagenesFondo = [
 function App() {
   const [fondoActual, setFondoActual] = useState(0)
   const [vistaActiva, setVistaActiva] = useState('teclado') // Puede ser 'teclado' o 'registro'
+  const [adminLoggedIn, setAdminLoggedIn] = useState(false) // Control global de la sesión del admin
+
+  const irAInicio = () => {
+    if (vistaActiva === 'admin' && adminLoggedIn) {
+      alert("Por seguridad, debes cerrar sesión antes de salir del panel de administración.");
+      return;
+    }
+    setVistaActiva('teclado');
+  }
 
   // Efecto para rotar la imagen cada 10 segundos
   useEffect(() => {
@@ -53,8 +63,22 @@ function App() {
         </div>
 
         <div className="navbar-links">
-          <a href="#">Inicio</a>
-          <a href="#">Administración</a>
+          <a href="#" onClick={(e) => { 
+            e.preventDefault(); 
+            if (vistaActiva === 'admin' && adminLoggedIn) {
+              alert("Por seguridad, debes cerrar sesión antes de salir del panel de administración.");
+              return;
+            }
+            setVistaActiva('teclado');
+          }}>Inicio</a>
+          <a href="#" onClick={(e) => { 
+            e.preventDefault(); 
+            if (vistaActiva === 'admin' && adminLoggedIn) {
+              alert("Por seguridad, debes cerrar sesión antes de salir del panel de administración.");
+              return;
+            }
+            setVistaActiva('admin');
+          }}>Administración</a>
         </div>
       </nav>
 
@@ -83,8 +107,14 @@ function App() {
               ¿No tienes código? Solicita acceso aquí
             </button>
           </div>
-        ) : (
+        ) : vistaActiva === 'registro' ? (
           <RegistroForm onVolver={() => setVistaActiva('teclado')} />
+        ) : (
+          <AdminPanel 
+            onVolver={() => setVistaActiva('teclado')} 
+            sesionIniciada={adminLoggedIn}
+            setSesionIniciada={setAdminLoggedIn}
+          />
         )}
       </main>
     </div>
