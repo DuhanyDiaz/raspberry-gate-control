@@ -46,30 +46,34 @@ export default function RegistroForm({ onVolver }) {
       })
 
       if (respuesta.ok) {
-        alert('¡Éxito! Tu solicitud ha sido registrada en la base de datos.')
+        Swal.fire({
+          icon: 'success',
+          title: '¡Enviado!',
+          text: 'Tu solicitud ha sido enviada al administrador. Recibirás un correo cuando sea aprobada.',
+          confirmButtonColor: '#2a7a43'
+        })
         onVolver() // Regresa al teclado numérico
       } else {
-        alert('Ocurrió un error al registrar la solicitud.')
+        Swal.fire('Error', 'Ocurrió un error al registrar la solicitud.', 'error')
       }
     } catch (error) {
-      alert('Error: No se pudo conectar con el servidor de Python.')
+      Swal.fire('Error', 'No se pudo conectar con el servidor de Python.', 'error')
     }
   }
-
 
   return (
     <div className="form-container">
       <h2>Solicitar Acceso</h2>
       <form onSubmit={enviarFormulario}>
-
+        
         <div className="input-group">
           <input type="text" name="nombres" placeholder="Nombres y Apellidos Completos" required onChange={manejarCambio} />
         </div>
-
+        
         <div className="input-group">
           <input type="email" name="correo" placeholder="Correo Electrónico" required onChange={manejarCambio} />
         </div>
-
+        
         <div className="row-group">
           <div className="input-group">
             <input type="number" name="dpi" placeholder="DPI" required onChange={manejarCambio} />
@@ -78,11 +82,11 @@ export default function RegistroForm({ onVolver }) {
             <input type="number" name="carne" placeholder="Carné Estudiantil" required onChange={manejarCambio} />
           </div>
         </div>
-
+        
         <div className="input-group">
           <input type="text" name="dias" placeholder="Días de acceso (Ej: Lunes, Miércoles)" required onChange={manejarCambio} />
         </div>
-
+        
         <div className="input-group">
           <input type="text" name="horarios" placeholder="Horario (Ej: 14:00 - 16:00)" required onChange={manejarCambio} />
         </div>
