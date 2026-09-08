@@ -11,6 +11,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
 
   // Datos simulados de estudiantes que llenaron el formulario
   const [solicitudes, setSolicitudes] = useState([])
+  const [historial, setHistorial] = useState([])
 
   // Función para descargar las solicitudes desde Python
   const cargarSolicitudes = async () => {
@@ -25,10 +26,24 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
     }
   }
 
+  // Función para descargar el historial de accesos
+  const cargarHistorial = async () => {
+    try {
+      const respuesta = await fetch("http://127.0.0.1:8000/api/accesos/historial")
+      if (respuesta.ok) {
+        const datos = await respuesta.json()
+        setHistorial(datos)
+      }
+    } catch (error) {
+      console.error("Error al cargar el historial:", error)
+    }
+  }
+
   // Cargar datos automáticamente al iniciar sesión
   useEffect(() => {
     if (sesionIniciada) {
       cargarSolicitudes()
+      cargarHistorial()
     }
   }, [sesionIniciada])
 
@@ -185,12 +200,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
     )
   }
 
-  // Datos simulados del historial de quién entró y a qué hora
-  const historial = [
-    { id: 101, nombres: 'Admin', accion: 'Apertura Manual', fecha: '14/11/2023 08:30:00' },
-    { id: 102, nombres: 'Carlos López', accion: 'Ingreso con PIN', fecha: '14/11/2023 09:15:22' },
-    { id: 103, nombres: 'Desconocido', accion: 'Intento Fallido (PIN Incorrecto)', fecha: '14/11/2023 10:05:10' }
-  ]
+
 
   // 2. PANTALLA DEL DASHBOARD DEL ADMINISTRADOR
   return (
