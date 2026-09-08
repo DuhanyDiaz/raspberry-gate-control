@@ -47,3 +47,27 @@ def deny_request(db: Session, request_id: int):
         db.commit()
         db.refresh(db_request)
     return db_request
+
+# Validar un PIN en la cerradura
+def validate_pin(db: Session, pin: str):
+    # Buscamos una solicitud aprobada que tenga este PIN
+    return db.query(models.AccessRequest).filter(
+        models.AccessRequest.pin_acceso == pin,
+        models.AccessRequest.estado == "APROBADA"
+    ).first()
+
+# Registrar intento en el historial
+def log_access(db: Session, carne: str, exito: bool):
+    nuevo_registro = models.AccessHistory(
+        carne_usado=carne,
+        fue_exitoso=exito
+    )
+    db.add(nuevo_registro)
+    db.commit()
+    db.refresh(nuevo_registro)
+    return nuevo_registro
+
+# Obtener historial para el Admin Panel
+def get_history(db: Session):
+    # Obtenemos los registros ordenados por fecha descendente
+    return db.query(models.AccessHistory).order_by(models.AccessHistory.fecha_hora.desc()).all()
