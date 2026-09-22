@@ -19,9 +19,13 @@ def create_request(db: Session, request: schemas.AccessRequestCreate):
         hora_fin=request.hora_fin
     )
     db.add(db_request)
-    db.commit() # Guarda en disco
-    db.refresh(db_request)
-    return db_request
+    try:
+        db.commit() # Guarda en disco
+        db.refresh(db_request)
+        return db_request
+    except Exception:
+        db.rollback()
+        return None
 
 # Obtener todas las solicitudes pendientes para llenar la tabla del Dashboard
 def get_pending_requests(db: Session):

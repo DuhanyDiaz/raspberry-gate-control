@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
@@ -6,10 +6,10 @@ from datetime import datetime
 
 # Esto es lo que React nos va a enviar cuando alguien llene el formulario
 class AccessRequestCreate(BaseModel):
-    nombre: str
-    carne: str
-    dpi: str
-    correo: str
+    nombre: str = Field(pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$", description="El nombre solo puede contener letras y espacios")
+    carne: str = Field(pattern=r"^\d{9}$", description="El carné debe tener exactamente 9 dígitos numéricos")
+    dpi: str = Field(pattern=r"^\d{13}$", description="El DPI debe tener exactamente 13 dígitos numéricos")
+    correo: str = Field(pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$", description="Debe ser un correo electrónico válido")
     dias_permitidos: str
     hora_inicio: str
     hora_fin: str

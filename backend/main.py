@@ -30,7 +30,10 @@ def read_root():
 # 1. Ruta para que el Alumno envíe su formulario
 @app.post("/api/solicitudes", response_model=schemas.AccessRequestResponse)
 def crear_solicitud(solicitud: schemas.AccessRequestCreate, db: Session = Depends(get_db)):
-    return crud.create_request(db=db, request=solicitud)
+    db_request = crud.create_request(db=db, request=solicitud)
+    if not db_request:
+        raise HTTPException(status_code=400, detail="Ya existe una solicitud registrada con ese carné o DPI.")
+    return db_request
 
 # 2. Ruta para que el Panel Admin lea las solicitudes pendientes
 @app.get("/api/solicitudes/pendientes")

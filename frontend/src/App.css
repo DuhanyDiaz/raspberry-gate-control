@@ -1,5 +1,6 @@
 /* Colores Institucionales FIUSAC */
 :root {
+  color-scheme: light;
   --verde-fiusac: #2a7a43;
   /* El verde de tu imagen */
   --verde-oscuro: #1d572e;
@@ -10,7 +11,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f4f4f4;
+  background-color: transparent;
 }
 
 .app-container {
@@ -22,7 +23,7 @@ body {
 
 /* --- ESTILOS DE LA BARRA SUPERIOR (NAVBAR) --- */
 .navbar {
-  background-color: var(--blanco);
+  background-color: var(--blanco) !important;
   height: 120px;
   display: flex;
   justify-content: space-between;
