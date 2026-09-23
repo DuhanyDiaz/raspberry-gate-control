@@ -40,6 +40,32 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+from pydantic import BaseModel, Field
+
+class AdminProfileUpdate(BaseModel):
+    username: str = Field(..., min_length=3, max_length=20, pattern=r"^[a-zA-Z0-9_]+$")
+    full_name: str = Field(..., min_length=1, max_length=100)
+    email: str = Field(..., pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$")
+
+class ForgotPasswordRequest(BaseModel):
+    username: str
+
+class ResetPasswordRequest(BaseModel):
+    recovery_key: str
+    new_password: str
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+class AdminResponse(BaseModel):
+    username: str
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 # --- SCHEMAS PARA EL TECLADO Y EL HISTORIAL ---
 class PINValidation(BaseModel):
     pin: str

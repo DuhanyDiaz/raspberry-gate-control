@@ -7,7 +7,17 @@ import './AdminPanel.css'
 export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada }) {
   const [usuario, setUsuario] = useState('')
   const [password, setPassword] = useState('')
-  const [pestañaActiva, setPestañaActiva] = useState('solicitudes') // 'solicitudes' o 'historial'
+  const [pestañaActiva, setPestañaActiva] = useState('solicitudes') // 'solicitudes', 'historial', 'perfil'
+
+  // Estados de recuperación
+  const [recuperandoPassword, setRecuperandoPassword] = useState(false)
+  const [pasoRecuperacion, setPasoRecuperacion] = useState(1) // 1: Pedir Usuario, 2: Pedir Llave y Nueva Contraseña
+  const [recoveryUsuario, setRecoveryUsuario] = useState('')
+  const [recoveryKey, setRecoveryKey] = useState('')
+  const [nuevaPassword, setNuevaPassword] = useState('')
+
+  // Datos del perfil
+  const [adminProfile, setAdminProfile] = useState({ username: '', full_name: '', email: '' })
 
   // Datos simulados de estudiantes que llenaron el formulario
   const [solicitudes, setSolicitudes] = useState([])
@@ -41,11 +51,48 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
 
   // Cargar datos automáticamente al iniciar sesión
   useEffect(() => {
-    if (sesionIniciada) {
+    if (sesionIniciada && usuario) {
       cargarSolicitudes()
       cargarHistorial()
+      cargarPerfil()
     }
-  }, [sesionIniciada])
+  }, [sesionIniciada, usuario])
+
+  const cargarPerfil = async () => {
+    try {
+      const resp = await fetch(`http://127.0.0.1:8000/api/admin/me?username=${usuario}`)
+      if (resp.ok) {
+        const data = await resp.json()
+        setAdminProfile({ username: data.username || '', full_name: data.full_name || '', email: data.email || '' })
+        if (!data.email) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Perfil Incompleto',
+            text: 'Por favor, configura tu correo electrónico en la pestaña "Mi Perfil" para poder recuperar tu contraseña en caso de olvido.',
+            confirmButtonColor: '#2a7a43'
+          })
+          setPestañaActiva('perfil')
+        }
+      }
+    } catch (e) { console.error(e) }
+  }
+
+  const guardarPerfil = async (e) => {
+    e.preventDefault()
+    try {
+      const resp = await fetch(`http://127.0.0.1:8000/api/admin/profile?username=${usuario}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(adminProfile)
+      })
+      if (resp.ok) {
+        setUsuario(adminProfile.username) // Actualizamos el usuario actual
+        Swal.fire('Guardado', 'Tu perfil ha sido actualizado.', 'success')
+      }
+    } catch (error) {
+      Swal.fire('Error', 'No se pudo guardar el perfil', 'error')
+    }
+  }
 
   // Botón Aprobar
   const manejarAprobar = async (id, nombre) => {
@@ -83,18 +130,66 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
     }
   }
 
-  const manejarLogin = (e) => {
+  const manejarLogin = async (e) => {
     e.preventDefault()
-    // Credenciales simuladas por ahora (Fase 1). En Fase 2 verificaremos con la base de datos real.
-    if (usuario === 'admin' && password === 'admin123') {
-      setSesionIniciada(true)
-    } else {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Usuario o contraseña incorrectos',
-        confirmButtonColor: '#2a7a43'
+    try {
+      const respuesta = await fetch("http://127.0.0.1:8000/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: usuario, password: password })
       })
+
+      if (respuesta.ok) {
+        setSesionIniciada(true)
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Usuario o contraseña incorrectos',
+          confirmButtonColor: '#2a7a43'
+        })
+      }
+    } catch (error) {
+      Swal.fire('Error', 'No se puede conectar con el servidor', 'error')
+    }
+  }
+
+  const manejarOlvidoPassword = async (e) => {
+    e.preventDefault()
+    try {
+      const respuesta = await fetch("http://127.0.0.1:8000/api/admin/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: recoveryUsuario })
+      })
+      if (respuesta.ok) {
+        Swal.fire('Enviado', 'Si el usuario existe, hemos enviado una llave de recuperación a su correo electrónico.', 'info')
+        setPasoRecuperacion(2)
+      }
+    } catch (e) {
+      Swal.fire('Error', 'No se pudo conectar con el servidor', 'error')
+    }
+  }
+
+  const manejarResetPassword = async (e) => {
+    e.preventDefault()
+    try {
+      const respuesta = await fetch("http://127.0.0.1:8000/api/admin/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recovery_key: recoveryKey, new_password: nuevaPassword })
+      })
+      if (respuesta.ok) {
+        Swal.fire('Contraseña Actualizada', 'Inicia sesión con tu nueva contraseña.', 'success')
+        setRecuperandoPassword(false)
+        setPasoRecuperacion(1)
+        setUsuario(recoveryUsuario)
+      } else {
+        const errorData = await respuesta.json()
+        Swal.fire('Error', errorData.detail || 'Llave incorrecta', 'error')
+      }
+    } catch (e) {
+      Swal.fire('Error', 'No se pudo conectar con el servidor', 'error')
     }
   }
 
@@ -127,16 +222,49 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
 
         return { current, newPass }
       }
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        Swal.fire({
-          icon: 'success',
-          title: 'Contraseña Actualizada',
-          text: 'Tu contraseña ha sido cambiada exitosamente.',
-          confirmButtonColor: '#2a7a43'
-        })
+        try {
+          const resp = await fetch(`http://127.0.0.1:8000/api/admin/change-password?username=${usuario}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ current_password: result.value.current, new_password: result.value.newPass })
+          })
+
+          if (resp.ok) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Contraseña Actualizada',
+              text: 'Tu contraseña ha sido cambiada exitosamente.',
+              confirmButtonColor: '#2a7a43'
+            })
+            // Actualizamos el state password si es necesario
+            setPassword(result.value.newPass)
+          } else {
+            const err = await resp.json()
+            Swal.fire('Error', err.detail || 'No se pudo cambiar la contraseña', 'error')
+          }
+        } catch (error) {
+          Swal.fire('Error', 'No se pudo conectar con el servidor', 'error')
+        }
       }
     })
+  }
+
+  const manejarCerrarSesion = () => {
+    if (!adminProfile.email) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Acción Denegada',
+        text: 'Por tu seguridad, no puedes cerrar sesión hasta que configures un correo electrónico en tu perfil.',
+        confirmButtonColor: '#2a7a43'
+      })
+      setPestañaActiva('perfil')
+    } else {
+      setSesionIniciada(false)
+      setUsuario('')
+      setPassword('')
+    }
   }
 
   const generarPDF = () => {
@@ -168,6 +296,44 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
 
   // 1. PANTALLA DE INICIO DE SESIÓN
   if (!sesionIniciada) {
+    if (recuperandoPassword) {
+      return (
+        <div className="admin-container">
+          <h2>Recuperar Contraseña</h2>
+          {pasoRecuperacion === 1 ? (
+            <form onSubmit={manejarOlvidoPassword}>
+              <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '15px', fontSize: '14px', textAlign: 'center' }}>
+                Ingresa tu nombre de usuario para enviarte una llave al correo.
+              </p>
+              <div className="input-group" style={{ marginBottom: '15px' }}>
+                <input type="text" placeholder="Usuario de Admin" value={recoveryUsuario} onChange={(e) => setRecoveryUsuario(e.target.value)} required style={{ width: '100%', padding: '12px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(0,0,0,0.2)', color: 'white', boxSizing: 'border-box' }} />
+              </div>
+              <div className="form-buttons" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                <button type="button" className="btn-cancel" onClick={() => setRecuperandoPassword(false)}>Cancelar</button>
+                <button type="submit" className="btn-submit" style={{ flex: 1, padding: '12px', background: 'var(--verde-fiusac)', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer' }}>Siguiente</button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={manejarResetPassword}>
+              <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '15px', fontSize: '14px', textAlign: 'center' }}>
+                Revisa tu correo e ingresa la llave temporal junto con tu nueva contraseña.
+              </p>
+              <div className="input-group" style={{ marginBottom: '15px' }}>
+                <input type="text" placeholder="Llave de Recuperación" value={recoveryKey} onChange={(e) => setRecoveryKey(e.target.value)} required style={{ width: '100%', padding: '12px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(0,0,0,0.2)', color: 'white', boxSizing: 'border-box' }} />
+              </div>
+              <div className="input-group" style={{ marginBottom: '25px' }}>
+                <input type="password" placeholder="Nueva Contraseña" value={nuevaPassword} onChange={(e) => setNuevaPassword(e.target.value)} required style={{ width: '100%', padding: '12px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(0,0,0,0.2)', color: 'white', boxSizing: 'border-box' }} />
+              </div>
+              <div className="form-buttons" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                <button type="button" className="btn-cancel" onClick={() => { setRecuperandoPassword(false); setPasoRecuperacion(1); }}>Cancelar</button>
+                <button type="submit" className="btn-submit" style={{ flex: 1, padding: '12px', background: 'var(--verde-fiusac)', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer' }}>Actualizar</button>
+              </div>
+            </form>
+          )}
+        </div>
+      )
+    }
+
     return (
       <div className="admin-container">
         <h2>Acceso Administrativo</h2>
@@ -195,6 +361,14 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
           <div className="form-buttons" style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
             <button type="submit" className="btn-login-skew">Iniciar Sesión</button>
           </div>
+          <div style={{ textAlign: 'center', marginTop: '15px' }}>
+            <button 
+              type="button" 
+              onClick={() => setRecuperandoPassword(true)}
+              style={{ background: 'none', border: 'none', color: '#51cf66', textDecoration: 'underline', cursor: 'pointer' }}>
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
         </form>
       </div>
     )
@@ -202,11 +376,18 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
 
 
 
+
+
   // 2. PANTALLA DEL DASHBOARD DEL ADMINISTRADOR
   return (
     <div className="admin-dashboard">
       <div className="admin-header">
-        <h2>Panel de Control de Accesos</h2>
+        <div>
+          <h2>Panel de Control de Accesos</h2>
+          <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0', fontSize: '18px' }}>
+            Bienvenido, {adminProfile.full_name || adminProfile.username || usuario}
+          </p>
+        </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button className="settings-btn" onClick={manejarCambioPassword} title="Cambiar Contraseña">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -214,7 +395,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
           </button>
-          <button className="Btn" onClick={() => setSesionIniciada(false)}>
+          <button className="Btn" onClick={manejarCerrarSesion}>
             <div className="sign">
               <svg viewBox="0 0 512 512">
                 <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"></path>
@@ -242,6 +423,14 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
           <span className="shadow"></span>
           <span className="edge"></span>
           <span className="front">Historial de Accesos</span>
+        </button>
+        <button
+          className={`pushable ${pestañaActiva === 'perfil' ? 'approve' : ''}`}
+          onClick={() => setPestañaActiva('perfil')}
+        >
+          <span className="shadow"></span>
+          <span className="edge"></span>
+          <span className="front">Mi Perfil</span>
         </button>
       </div>
 
@@ -324,6 +513,56 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {pestañaActiva === 'perfil' && (
+        <div className="table-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '40px 20px' }}>
+          <h3 style={{ color: '#51cf66', fontSize: '24px', marginBottom: '10px' }}>Mi Perfil de Administrador</h3>
+          <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '30px' }}>
+            Configura tu usuario, nombre y correo electrónico.
+          </p>
+          <form onSubmit={guardarPerfil} style={{ width: '100%', maxWidth: '400px', textAlign: 'left' }}>
+            <div className="input-group" style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: '#fff', fontSize: '14px' }}>Nombre de Usuario (Login)</label>
+              <input
+                type="text"
+                value={adminProfile.username}
+                onChange={(e) => setAdminProfile({ ...adminProfile, username: e.target.value })}
+                required
+                pattern="^[a-zA-Z0-9_]+$"
+                title="El usuario solo puede contener letras, números y guiones bajos"
+                style={{ width: '100%', padding: '12px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(0,0,0,0.2)', color: 'white', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div className="input-group" style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: '#fff', fontSize: '14px' }}>Nombre Completo</label>
+              <input
+                type="text"
+                value={adminProfile.full_name}
+                onChange={(e) => setAdminProfile({ ...adminProfile, full_name: e.target.value })}
+                required
+                style={{ width: '100%', padding: '12px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(0,0,0,0.2)', color: 'white', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div className="input-group" style={{ marginBottom: '30px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: '#fff', fontSize: '14px' }}>Correo Electrónico</label>
+              <input
+                type="email"
+                value={adminProfile.email}
+                onChange={(e) => setAdminProfile({ ...adminProfile, email: e.target.value })}
+                required
+                pattern="^[\w\.-]+@[\w\.-]+\.\w+$"
+                title="Por favor, ingresa un correo electrónico válido"
+                style={{ width: '100%', padding: '12px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(0,0,0,0.2)', color: 'white', boxSizing: 'border-box' }}
+              />
+            </div>
+            <button type="submit" className="pushable approve" style={{ width: '100%' }}>
+              <span className="shadow"></span>
+              <span className="edge"></span>
+              <span className="front" style={{ padding: '12px 42px' }}>Guardar Cambios</span>
+            </button>
+          </form>
         </div>
       )}
     </div>

@@ -9,6 +9,9 @@ class Admin(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String) # Guardaremos la contraseña encriptada
+    full_name = Column(String, nullable=True) # Nombre del administrador
+    email = Column(String, nullable=True) # Correo para recuperación
+    recovery_key = Column(String, nullable=True) # Llave temporal de recuperación
 
 # 2. Tabla de Solicitudes de los Estudiantes
 class AccessRequest(Base):

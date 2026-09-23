@@ -11,3 +11,7 @@ __pycache__/
 # Archivos generados por el sistema operativo
 .DS_Store
 Thumbs.db
+
+# Bases de datos SQLite
+*.db
+*.sqlite3

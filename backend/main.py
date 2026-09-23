@@ -27,6 +27,77 @@ app.add_middleware(
 def read_root():
     return {"mensaje": "Servidor de Control de Accesos FIUSAC activo"}
 
+# --- RUTAS DE ADMINISTRADOR ---
+@app.post("/api/admin/login")
+def login_admin(admin_data: schemas.AdminCreate, db: Session = Depends(get_db)):
+    admin = crud.get_admin(db, admin_data.username)
+    if not admin or not auth.verify_password(admin_data.password, admin.hashed_password):
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+    return {"mensaje": "Login exitoso", "username": admin.username}
+
+@app.get("/api/admin/me", response_model=schemas.AdminResponse)
+def get_admin_profile(username: str, db: Session = Depends(get_db)):
+    admin = crud.get_admin(db, username)
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin no encontrado")
+    return admin
+
+@app.put("/api/admin/profile")
+def update_profile(username: str, profile_data: schemas.AdminProfileUpdate, db: Session = Depends(get_db)):
+    admin = crud.update_admin_profile(db, username, profile_data.username, profile_data.full_name, profile_data.email)
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin no encontrado")
+    return {"mensaje": "Perfil actualizado correctamente"}
+
+import random
+import string
+
+@app.post("/api/admin/forgot-password")
+def forgot_password(req: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
+    admin = crud.get_admin(db, req.username)
+    if not admin:
+        # Por seguridad no decimos que el usuario no existe
+        return {"mensaje": "Si el usuario existe, se enviará una llave a su correo"}
+    
+    # Generar llave de 6 caracteres
+    key = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    crud.set_recovery_key(db, admin.username, key)
+    
+    print(f"\n=======================================================")
+    print(f"📧 [CORREO SIMULADO] Para: {admin.email or 'CORREO_NO_CONFIGURADO'}")
+    print(f"Asunto: Recuperación de contraseña - Panel EMI")
+    print(f"Tu llave temporal de recuperación es: {key}")
+    print(f"=======================================================\n")
+    
+    return {"mensaje": "Si el usuario existe, se enviará una llave a su correo", "simulated_key": key}
+
+@app.post("/api/admin/reset-password")
+def reset_password(req: schemas.ResetPasswordRequest, db: Session = Depends(get_db)):
+    # Buscar qué admin tiene esta llave
+    admin = db.query(models.Admin).filter(models.Admin.recovery_key == req.recovery_key).first()
+    if not admin:
+        raise HTTPException(status_code=400, detail="Llave de recuperación inválida o expirada")
+    
+    # Hashear nueva contraseña
+    hashed = auth.get_password_hash(req.new_password)
+    crud.reset_admin_password(db, admin.username, hashed)
+    
+    return {"mensaje": "Contraseña actualizada exitosamente"}
+
+@app.put("/api/admin/change-password")
+def change_password(username: str, req: schemas.ChangePasswordRequest, db: Session = Depends(get_db)):
+    admin = crud.get_admin(db, username)
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin no encontrado")
+    
+    if not auth.verify_password(req.current_password, admin.hashed_password):
+        raise HTTPException(status_code=401, detail="La contraseña actual es incorrecta")
+        
+    hashed = auth.get_password_hash(req.new_password)
+    crud.change_admin_password(db, username, hashed)
+    
+    return {"mensaje": "Contraseña cambiada exitosamente"}
+
 # 1. Ruta para que el Alumno envíe su formulario
 @app.post("/api/solicitudes", response_model=schemas.AccessRequestResponse)
 def crear_solicitud(solicitud: schemas.AccessRequestCreate, db: Session = Depends(get_db)):

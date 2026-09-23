@@ -7,6 +7,41 @@ import random
 def get_admin(db: Session, username: str):
     return db.query(models.Admin).filter(models.Admin.username == username).first()
 
+def update_admin_profile(db: Session, current_username: str, new_username: str, full_name: str, email: str):
+    admin = get_admin(db, current_username)
+    if admin:
+        admin.username = new_username
+        admin.full_name = full_name
+        admin.email = email
+        db.commit()
+        db.refresh(admin)
+    return admin
+
+def set_recovery_key(db: Session, username: str, key: str):
+    admin = get_admin(db, username)
+    if admin:
+        admin.recovery_key = key
+        db.commit()
+        db.refresh(admin)
+    return admin
+
+def reset_admin_password(db: Session, username: str, new_password_hashed: str):
+    admin = get_admin(db, username)
+    if admin:
+        admin.hashed_password = new_password_hashed
+        admin.recovery_key = None # Clear the key after using it
+        db.commit()
+        db.refresh(admin)
+    return admin
+
+def change_admin_password(db: Session, username: str, new_password_hashed: str):
+    admin = get_admin(db, username)
+    if admin:
+        admin.hashed_password = new_password_hashed
+        db.commit()
+        db.refresh(admin)
+    return admin
+
 # Crear una solicitud nueva (cuando el alumno llena el formulario)
 def create_request(db: Session, request: schemas.AccessRequestCreate):
     db_request = models.AccessRequest(
