@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import Swal from 'sweetalert2'
 import ReactSlider from 'react-slider'
+import DatePicker from 'react-datepicker'
+import "react-datepicker/dist/react-datepicker.css"
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import './RegistroForm.css'
 
 export default function RegistroForm({ onVolver }) {
@@ -15,6 +19,10 @@ export default function RegistroForm({ onVolver }) {
   // Estado para el slider de doble pulgar (de 14:00 a 16:00 por defecto)
   const [horario, setHorario] = useState([14, 16])
 
+  // Estado para el rango de fechas
+  const [dateRange, setDateRange] = useState([null, null])
+  const [startDate, endDate] = dateRange
+
   // Funciones para formatear horas
   const format12h = (hour) => {
     const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -26,16 +34,6 @@ export default function RegistroForm({ onVolver }) {
     return `${hour.toString().padStart(2, '0')}:00`;
   };
 
-  const DIAS_SEMANA = [
-    { id: 1, nombre: 'Lunes', corto: 'Lun' },
-    { id: 2, nombre: 'Martes', corto: 'Mar' },
-    { id: 3, nombre: 'Miércoles', corto: 'Mié' },
-    { id: 4, nombre: 'Jueves', corto: 'Jue' },
-    { id: 5, nombre: 'Viernes', corto: 'Vie' },
-    { id: 6, nombre: 'Sábado', corto: 'Sáb' }
-  ];
-  const [diasSeleccionados, setDiasSeleccionados] = useState([])
-
   // Función genérica para guardar lo que se escribe en el estado
   const manejarCambio = (e) => {
     setDatos({
@@ -43,18 +41,6 @@ export default function RegistroForm({ onVolver }) {
       [e.target.name]: e.target.value
     })
   }
-
-  const toggleDia = (diaId) => {
-    setDiasSeleccionados(prev => {
-      if (prev.includes(diaId)) {
-        return prev.filter(id => id !== diaId);
-      } else {
-        return [...prev, diaId].sort();
-      }
-    });
-  };
-
-  const diasTexto = diasSeleccionados.map(id => DIAS_SEMANA.find(d => d.id === id).nombre).join(', ');
 
   // Función cuando le dan "Enviar Solicitud"
   const enviarFormulario = async (e) => {
@@ -105,14 +91,21 @@ export default function RegistroForm({ onVolver }) {
       return;
     }
 
-    if (diasSeleccionados.length === 0) {
+    if (!startDate) {
       Swal.fire({
         icon: 'error',
-        title: 'Faltan días',
-        text: 'Por favor, selecciona al menos un día de acceso usando las etiquetas.',
+        title: 'Faltan fechas',
+        text: 'Por favor, selecciona un rango de fechas de acceso.',
         confirmButtonColor: '#ff6b6b'
       });
       return;
+    }
+
+    let diasTexto = '';
+    if (startDate && endDate) {
+      diasTexto = `${format(startDate, 'dd MMM yyyy', { locale: es })} - ${format(endDate, 'dd MMM yyyy', { locale: es })}`;
+    } else if (startDate) {
+      diasTexto = format(startDate, 'dd MMM yyyy', { locale: es });
     }
 
     // 1. Empaquetamos los datos exactamente como los pide schemas.py en Python
@@ -173,26 +166,29 @@ export default function RegistroForm({ onVolver }) {
           </div>
         </div>
 
-        <div className="input-group">
-          <label className="chips-label">Días de acceso solicitados</label>
-          <div className="chips-container">
-            {DIAS_SEMANA.map(dia => (
-              <button
-                type="button"
-                key={dia.id}
-                className={`chip ${diasSeleccionados.includes(dia.id) ? 'selected' : ''}`}
-                onClick={() => toggleDia(dia.id)}
-              >
-                {diasSeleccionados.includes(dia.id) && <span className="check-icon">✓</span>}
-                {dia.corto}
-              </button>
-            ))}
-          </div>
-          {diasSeleccionados.length > 0 && (
-            <div className="dias-seleccionados-texto">
-              Seleccionados: {diasTexto}
-            </div>
-          )}
+        <div className="input-group custom-datepicker-container">
+          <label className="chips-label">Días de acceso (Selecciona un rango de fechas)</label>
+          <DatePicker
+            selectsRange={true}
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(update) => setDateRange(update)}
+            monthsShown={2}
+            locale={es}
+            dateFormat="dd MMM yyyy"
+            placeholderText="Selecciona fechas..."
+            className="date-picker-input"
+            isClearable={true}
+            popperPlacement="bottom-start"
+            popperModifiers={[
+              {
+                name: "preventOverflow",
+                options: {
+                  boundary: "window",
+                },
+              },
+            ]}
+          />
         </div>
 
         <div className="input-group">
