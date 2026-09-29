@@ -13,7 +13,10 @@ export default function RegistroForm({ onVolver }) {
     nombres: '',
     carne: '',
     dpi: '',
-    correo: ''
+    correo: '',
+    rol: 'Estudiante',
+    usuario: '',
+    password: ''
   })
 
   // Estado para el slider de doble pulgar (de 14:00 a 16:00 por defecto)
@@ -69,6 +72,27 @@ export default function RegistroForm({ onVolver }) {
       return;
     }
 
+    const regexUsuario = /^[a-zA-Z0-9]+$/;
+    if (!regexUsuario.test(datos.usuario)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Usuario Inválido',
+        text: 'El nombre de usuario solo puede contener letras y números (sin espacios, símbolos o scripts).',
+        confirmButtonColor: '#ff6b6b'
+      });
+      return;
+    }
+
+    if (!datos.password || datos.password.length < 4) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Contraseña Inválida',
+        text: 'La contraseña debe tener al menos 4 caracteres.',
+        confirmButtonColor: '#ff6b6b'
+      });
+      return;
+    }
+
     const regexCarne = /^\d{9}$/;
     if (!regexCarne.test(datos.carne)) {
       Swal.fire({
@@ -114,9 +138,13 @@ export default function RegistroForm({ onVolver }) {
       carne: datos.carne,
       dpi: datos.dpi,
       correo: datos.correo,
+      rol: datos.rol,
+      usuario: datos.usuario,
+      password: datos.password,
       dias_permitidos: diasTexto,
       hora_inicio: format24h(horario[0]),
-      hora_fin: format24h(horario[1])
+      hora_fin: format24h(horario[1]),
+      fecha_expiracion: endDate ? format(endDate, 'yyyy-MM-dd') : format(startDate, 'yyyy-MM-dd')
     }
 
     try {
@@ -149,8 +177,62 @@ export default function RegistroForm({ onVolver }) {
       <h2>Solicitar Acceso</h2>
       <form onSubmit={enviarFormulario}>
 
+        {/* SELECCIÓN DE ROL CON BOTONES */}
+        <div className="input-group">
+          <label className="chips-label">Tipo de Persona</label>
+          <div className="rol-buttons-container">
+            <button
+              type="button"
+              className={`rol-btn ${datos.rol === 'Estudiante' ? 'active' : ''}`}
+              onClick={() => setDatos({ ...datos, rol: 'Estudiante' })}
+            >
+              <span className="rol-icon"></span> Estudiante
+            </button>
+            <button
+              type="button"
+              className={`rol-btn ${datos.rol === 'Catedrático' ? 'active' : ''}`}
+              onClick={() => setDatos({ ...datos, rol: 'Catedrático' })}
+            >
+              <span className="rol-icon"></span> Catedrático
+            </button>
+            <button
+              type="button"
+              className={`rol-btn ${datos.rol === 'Dirección' ? 'active' : ''}`}
+              onClick={() => setDatos({ ...datos, rol: 'Dirección' })}
+            >
+              <span className="rol-icon"></span> Dirección
+            </button>
+          </div>
+        </div>
+
         <div className="input-group">
           <input type="text" name="nombres" placeholder="Nombres y Apellidos Completos" required onChange={manejarCambio} />
+        </div>
+
+        {/* FILA CON USUARIO Y CONTRASEÑA DE ACCESO */}
+        <div className="row-group">
+          <div className="input-group">
+            <input
+              type="text"
+              name="usuario"
+              placeholder="Usuario (Letras y Números)"
+              required
+              onChange={manejarCambio}
+              pattern="[a-zA-Z0-9]+"
+              title="Solo letras y números, sin espacios ni símbolos"
+              maxLength={20}
+            />
+          </div>
+          <div className="input-group">
+            <input
+              type="password"
+              name="password"
+              placeholder="Contraseña"
+              required
+              onChange={manejarCambio}
+              minLength={4}
+            />
+          </div>
         </div>
 
         <div className="input-group">
@@ -195,16 +277,16 @@ export default function RegistroForm({ onVolver }) {
           <label className="chips-label">Horario de acceso</label>
           <div className="slider-container">
             <div className="slider-labels-top">
-              <span>06:00 AM</span>
-              <span>08:00 PM</span>
+              <span>08:00 AM</span>
+              <span>07:00 PM</span>
             </div>
 
             <ReactSlider
               className="horizontal-slider"
               thumbClassName="slider-thumb"
               trackClassName="slider-track"
-              min={6}
-              max={20}
+              min={8}
+              max={19}
               value={horario}
               onChange={(val) => setHorario(val)}
               minDistance={1}

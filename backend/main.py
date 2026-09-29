@@ -102,8 +102,10 @@ def change_password(username: str, req: schemas.ChangePasswordRequest, db: Sessi
 @app.post("/api/solicitudes", response_model=schemas.AccessRequestResponse)
 def crear_solicitud(solicitud: schemas.AccessRequestCreate, db: Session = Depends(get_db)):
     db_request = crud.create_request(db=db, request=solicitud)
-    if not db_request:
-        raise HTTPException(status_code=400, detail="Ya existe una solicitud registrada con ese carné o DPI.")
+    if db_request == "CONFLICT":
+        raise HTTPException(status_code=400, detail="Ya tienes una solicitud activa (Pendiente o Aprobada) con ese Carné, DPI o Usuario.")
+    elif not db_request:
+        raise HTTPException(status_code=400, detail="Ocurrió un error al registrar la solicitud.")
     return db_request
 
 # 2. Ruta para que el Panel Admin lea las solicitudes pendientes
@@ -111,10 +113,23 @@ def crear_solicitud(solicitud: schemas.AccessRequestCreate, db: Session = Depend
 def obtener_pendientes(db: Session = Depends(get_db)):
     return crud.get_pending_requests(db=db)
 
+# 2.5 Ruta para leer solicitudes aprobadas activas
+@app.get("/api/solicitudes/aprobadas")
+def obtener_aprobadas(db: Session = Depends(get_db)):
+    return crud.get_approved_requests(db=db)
+
+# 2.6 Ruta para finalizar (eliminar) una solicitud aprobada
+@app.delete("/api/solicitudes/{solicitud_id}/finalizar")
+def finalizar_solicitud(solicitud_id: int, admin_username: str = "Admin", db: Session = Depends(get_db)):
+    exito = crud.delete_request(db, request_id=solicitud_id, admin_username=admin_username)
+    if not exito:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    return {"mensaje": "Solicitud finalizada y eliminada correctamente"}
+
 # 3. Ruta para que el Admin APROBÉ una solicitud (Genera el PIN y enviará el correo)
 @app.put("/api/solicitudes/{solicitud_id}/aprobar")
-def aprobar_solicitud(solicitud_id: int, db: Session = Depends(get_db)):
-    solicitud = crud.approve_request(db, request_id=solicitud_id)
+def aprobar_solicitud(solicitud_id: int, admin_username: str = "Admin", db: Session = Depends(get_db)):
+    solicitud = crud.approve_request(db, request_id=solicitud_id, admin_username=admin_username)
     if not solicitud:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
     
@@ -126,15 +141,24 @@ def aprobar_solicitud(solicitud_id: int, db: Session = Depends(get_db)):
 
 # 4. Ruta para Denegar
 @app.put("/api/solicitudes/{solicitud_id}/denegar")
-def denegar_solicitud(solicitud_id: int, db: Session = Depends(get_db)):
-    solicitud = crud.deny_request(db, request_id=solicitud_id)
+def denegar_solicitud(solicitud_id: int, admin_username: str = "Admin", db: Session = Depends(get_db)):
+    solicitud = crud.deny_request(db, request_id=solicitud_id, admin_username=admin_username)
     if not solicitud:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
     return {"mensaje": "Solicitud denegada correctamente"}
 
+@app.post("/api/usuario/login", response_model=schemas.AccessRequestResponse)
+def login_usuario(datos: schemas.UserLoginRequest, db: Session = Depends(get_db)):
+    crud.cleanup_expired_requests(db) # Limpiar las expiradas al iniciar sesión
+    solicitud = crud.authenticate_user(db, usuario=datos.usuario, password=datos.password)
+    if not solicitud:
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+    return solicitud
+
 # 5. Ruta para Validar PIN en el teclado
 @app.post("/api/accesos/validar")
 def validar_pin(datos: schemas.PINValidation, db: Session = Depends(get_db)):
+    crud.cleanup_expired_requests(db) # Limpiar las expiradas antes de validar el PIN
     solicitud = crud.validate_pin(db, pin=datos.pin)
     
     if solicitud:
@@ -160,7 +184,11 @@ def obtener_historial(db: Session = Depends(get_db)):
         usuario = "Desconocido"
         accion = "Intento Fallido (PIN Incorrecto)"
         
-        if reg.fue_exitoso:
+        if reg.accion_texto:
+            # Es un registro de administrador
+            usuario = f"Administrador ({reg.carne_usado})"
+            accion = reg.accion_texto
+        elif reg.fue_exitoso:
             sol = db.query(models.AccessRequest).filter(models.AccessRequest.carne == reg.carne_usado).first()
             usuario = sol.nombre if sol else reg.carne_usado
             accion = "Ingreso con PIN"
@@ -169,7 +197,8 @@ def obtener_historial(db: Session = Depends(get_db)):
             "id": reg.id,
             "nombres": usuario,
             "accion": accion,
-            "fecha": reg.fecha_hora.strftime("%d/%m/%Y %H:%M:%S")
+            "fecha": reg.fecha_hora.strftime("%d/%m/%Y %H:%M:%S"),
+            "es_admin": bool(reg.accion_texto)
         })
         
     return respuesta

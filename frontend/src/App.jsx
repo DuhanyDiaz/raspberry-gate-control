@@ -11,6 +11,7 @@ import imgUsac from './assets/USAC.png'
 import Keypad from './Keypad'
 import RegistroForm from './RegistroForm'
 import AdminPanel from './AdminPanel'
+import UserPortal from './UserPortal'
 
 const imagenesFondo = [
   imgT3,
@@ -36,6 +37,20 @@ function App() {
       return;
     }
     setVistaActiva('teclado');
+  }
+
+  const manejarIrARegistro = () => {
+    Swal.fire({
+      icon: 'info',
+      title: 'Aviso Importante',
+      text: 'Los datos que ingreses deben ser reales (incluyendo un correo electrónico válido/existente). Recuerda guardar bien tu Usuario y Contraseña, ya que los necesitarás para iniciar sesión, ver tu PIN de acceso y recibir notificaciones.',
+      confirmButtonText: 'Entendido, continuar',
+      confirmButtonColor: '#2a7a43'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setVistaActiva('registro');
+      }
+    });
   }
 
   // Efecto para rotar la imagen cada 10 segundos
@@ -108,6 +123,21 @@ function App() {
             setVistaActiva('admin');
             setMenuAbierto(false);
           }}>Administración</a>
+          <a href="#" onClick={(e) => { 
+            e.preventDefault(); 
+            if (vistaActiva === 'admin' && adminLoggedIn) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Atención',
+                text: 'Por seguridad, debes cerrar sesión antes de salir del panel de administración.',
+                confirmButtonColor: '#2a7a43'
+              });
+              setMenuAbierto(false);
+              return;
+            }
+            setVistaActiva('usuario');
+            setMenuAbierto(false);
+          }}>Mi Acceso</a>
         </div>
       </nav>
 
@@ -122,7 +152,7 @@ function App() {
             
             {/* Enlace para ir al formulario */}
             <button 
-              onClick={() => setVistaActiva('registro')}
+              onClick={manejarIrARegistro}
               style={{
                 marginTop: '30px', 
                 background: 'transparent', 
@@ -138,6 +168,8 @@ function App() {
           </div>
         ) : vistaActiva === 'registro' ? (
           <RegistroForm onVolver={() => setVistaActiva('teclado')} />
+        ) : vistaActiva === 'usuario' ? (
+          <UserPortal onVolver={() => setVistaActiva('teclado')} />
         ) : (
           <AdminPanel 
             onVolver={() => setVistaActiva('teclado')} 

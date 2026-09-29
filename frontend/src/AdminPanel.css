@@ -117,7 +117,8 @@
 
 .table-container h3 {
   margin-top: 0;
-  color: #38bdf8;
+  color: #fbf6f6;
+  font-weight: 700;
 }
 
 table {
@@ -125,24 +126,31 @@ table {
   border-collapse: collapse;
   margin-top: 10px;
   font-size: 15px;
+  background-color: #ffffff;
+  color: #333333;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 th,
 td {
   padding: 12px 15px;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid #e0e0e0;
 }
 
 th {
-  background: rgba(0, 0, 0, 0.4);
-  font-weight: 600;
-  color: #38bdf8;
+  background: #f1f5f9;
+  font-weight: 700;
+  color: #1e293b;
   text-align: center;
+  text-transform: uppercase;
+  font-size: 13px;
 }
 
 tr:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: #f8fafc;
 }
 
 /* --- ESTILOS PARA LAS PESTAÑAS --- */
@@ -355,9 +363,23 @@ tr:hover {
   font-size: 14px;
   transition: background-color 0.3s;
   border: 1px solid var(--verde-oscuro);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
 .btn-download-csv:hover {
   background-color: var(--verde-oscuro);
+}
+
+/* --- BADGE PARA ROLES EN TABLA --- */
+.badge-rol {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+  text-shadow: none;
 }

@@ -21,6 +21,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
 
   // Datos simulados de estudiantes que llenaron el formulario
   const [solicitudes, setSolicitudes] = useState([])
+  const [aprobadas, setAprobadas] = useState([])
   const [historial, setHistorial] = useState([])
 
   // Función para descargar las solicitudes desde Python
@@ -33,6 +34,18 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
       }
     } catch (error) {
       console.error("Error al cargar solicitudes:", error)
+    }
+  }
+
+  const cargarAprobadas = async () => {
+    try {
+      const respuesta = await fetch("http://127.0.0.1:8000/api/solicitudes/aprobadas")
+      if (respuesta.ok) {
+        const datos = await respuesta.json()
+        setAprobadas(datos)
+      }
+    } catch (error) {
+      console.error("Error al cargar aprobadas:", error)
     }
   }
 
@@ -53,6 +66,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   useEffect(() => {
     if (sesionIniciada && usuario) {
       cargarSolicitudes()
+      cargarAprobadas()
       cargarHistorial()
       cargarPerfil()
     }
@@ -97,7 +111,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   // Botón Aprobar
   const manejarAprobar = async (id, nombre) => {
     try {
-      const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/aprobar`, { method: "PUT" })
+      const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/aprobar?admin_username=${usuario}`, { method: "PUT" })
       if (respuesta.ok) {
         Swal.fire({
           icon: 'success',
@@ -106,6 +120,8 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
           confirmButtonColor: '#2a7a43'
         })
         cargarSolicitudes() // Recargamos la tabla para que desaparezca
+        cargarAprobadas() // Refrescar la tabla de aprobadas
+        cargarHistorial() // Actualizar historial de acciones
       }
     } catch (error) {
       Swal.fire('Error', 'Error al aprobar.', 'error')
@@ -115,7 +131,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   // Botón Denegar
   const manejarDenegar = async (id, nombre) => {
     try {
-      const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/denegar`, { method: "PUT" })
+      const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/denegar?admin_username=${usuario}`, { method: "PUT" })
       if (respuesta.ok) {
         Swal.fire({
           icon: 'info',
@@ -124,9 +140,36 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
           confirmButtonColor: '#ff6b6b'
         })
         cargarSolicitudes()
+        cargarHistorial()
       }
     } catch (error) {
       Swal.fire('Error', 'Error al denegar.', 'error')
+    }
+  }
+
+  // Botón Finalizar (Eliminar Aprobada)
+  const manejarFinalizar = async (id, nombre) => {
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: `Vas a finalizar y eliminar el acceso de ${nombre}. Tendrá que llenar el formulario de nuevo si desea ingresar.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, finalizar acceso'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/finalizar?admin_username=${usuario}`, { method: "DELETE" })
+        if (respuesta.ok) {
+          Swal.fire('Finalizado', `El acceso de ${nombre} ha sido eliminado.`, 'success')
+          cargarAprobadas()
+          cargarHistorial()
+        }
+      } catch (error) {
+        Swal.fire('Error', 'No se pudo finalizar el acceso.', 'error')
+      }
     }
   }
 
@@ -365,7 +408,16 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
             <button 
               type="button" 
               onClick={() => setRecuperandoPassword(true)}
-              style={{ background: 'none', border: 'none', color: '#51cf66', textDecoration: 'underline', cursor: 'pointer' }}>
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#ffffff',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                textShadow: '0 1px 3px rgba(0, 0, 0, 0.7)'
+              }}>
               ¿Olvidaste tu contraseña?
             </button>
           </div>
@@ -417,6 +469,22 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
           <span className="front">Solicitudes Pendientes</span>
         </button>
         <button
+          className={`pushable ${pestañaActiva === 'aprobadas' ? 'approve' : ''}`}
+          onClick={() => setPestañaActiva('aprobadas')}
+        >
+          <span className="shadow"></span>
+          <span className="edge"></span>
+          <span className="front">Aprobadas Activas</span>
+        </button>
+        <button
+          className={`pushable ${pestañaActiva === 'historial_aprobaciones' ? 'approve' : ''}`}
+          onClick={() => setPestañaActiva('historial_aprobaciones')}
+        >
+          <span className="shadow"></span>
+          <span className="edge"></span>
+          <span className="front">Historial Aprobaciones</span>
+        </button>
+        <button
           className={`pushable ${pestañaActiva === 'historial' ? 'approve' : ''}`}
           onClick={() => setPestañaActiva('historial')}
         >
@@ -440,7 +508,9 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
           <table>
             <thead>
               <tr>
+                <th>Rol</th>
                 <th>Nombre</th>
+                <th>Usuario</th>
                 <th>Carné</th>
                 <th>DPI</th>
                 <th>Días</th>
@@ -451,7 +521,9 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
             <tbody>
               {solicitudes.map(sol => (
                 <tr key={sol.id}>
+                  <td><span className="badge-rol">{sol.rol || "Estudiante"}</span></td>
                   <td>{sol.nombre}</td>
+                  <td><strong>{sol.usuario || "-"}</strong></td>
                   <td>{sol.carne}</td>
                   <td>{sol.dpi}</td>
                   <td>{sol.dias_permitidos}</td>
@@ -470,6 +542,81 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
                   </td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {pestañaActiva === 'aprobadas' && (
+        <div className="table-container">
+          <h3>Solicitudes Aprobadas Activas</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Rol</th>
+                <th>Nombre</th>
+                <th>Usuario</th>
+                <th>Carné / DPI</th>
+                <th>Días</th>
+                <th>Horario</th>
+                <th>PIN Actual</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {aprobadas.map(sol => (
+                <tr key={sol.id}>
+                  <td><span className="badge-rol">{sol.rol || "Estudiante"}</span></td>
+                  <td>{sol.nombre}</td>
+                  <td><strong>{sol.usuario || "-"}</strong></td>
+                  <td>{sol.carne || sol.dpi}</td>
+                  <td>{sol.dias_permitidos}</td>
+                  <td>{sol.hora_inicio} - {sol.hora_fin}</td>
+                  <td style={{ letterSpacing: '2px', fontWeight: 'bold', color: '#2a7a43' }}>{sol.pin_acceso}</td>
+                  <td>
+                    <button className="pushable deny" onClick={() => manejarFinalizar(sol.id, sol.nombre)}>
+                      <span className="shadow"></span>
+                      <span className="edge" style={{ background: 'linear-gradient(to left, #8b0000 0%, #ff0000 100%)' }}></span>
+                      <span className="front" style={{ background: '#d33' }}>Finalizar</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {pestañaActiva === 'historial_aprobaciones' && (
+        <div className="table-container">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3>Historial de Aprobaciones / Administrador</h3>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Administrador</th>
+                <th>Acción Realizada</th>
+                <th>Fecha y Hora</th>
+              </tr>
+            </thead>
+            <tbody>
+              {historial.filter(reg => reg.es_admin).map(reg => (
+                <tr key={reg.id}>
+                  <td><strong>{reg.nombres}</strong></td>
+                  <td>
+                    <span style={{ color: '#16a34a', fontWeight: 'bold' }}>
+                      {reg.accion}
+                    </span>
+                  </td>
+                  <td>{reg.fecha}</td>
+                </tr>
+              ))}
+              {historial.filter(reg => reg.es_admin).length === 0 && (
+                <tr>
+                  <td colSpan="3" style={{ textAlign: 'center', opacity: 0.7 }}>No hay acciones de administrador registradas.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -497,12 +644,12 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
               </tr>
             </thead>
             <tbody>
-              {historial.map(reg => (
+              {historial.filter(reg => !reg.es_admin).map(reg => (
                 <tr key={reg.id}>
                   <td>{reg.nombres}</td>
                   <td>
                     <span style={{
-                      color: reg.accion.includes('Fallido') ? '#ff6b6b' : '#51cf66',
+                      color: reg.accion.includes('Fallido') ? '#dc2626' : '#16a34a',
                       fontWeight: 'bold'
                     }}>
                       {reg.accion}
@@ -511,6 +658,11 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
                   <td>{reg.fecha}</td>
                 </tr>
               ))}
+              {historial.filter(reg => !reg.es_admin).length === 0 && (
+                <tr>
+                  <td colSpan="3" style={{ textAlign: 'center', opacity: 0.7 }}>No hay accesos físicos registrados.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

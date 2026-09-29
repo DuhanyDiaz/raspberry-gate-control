@@ -10,9 +10,13 @@ class AccessRequestCreate(BaseModel):
     carne: str = Field(pattern=r"^\d{9}$", description="El carné debe tener exactamente 9 dígitos numéricos")
     dpi: str = Field(pattern=r"^\d{13}$", description="El DPI debe tener exactamente 13 dígitos numéricos")
     correo: str = Field(pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$", description="Debe ser un correo electrónico válido")
+    rol: str = Field(default="Estudiante", pattern=r"^(Estudiante|Catedrático|Dirección)$", description="El rol debe ser Estudiante, Catedrático o Dirección")
+    usuario: str = Field(..., min_length=3, max_length=20, pattern=r"^[a-zA-Z0-9]+$", description="El usuario solo puede contener letras y números")
+    password: str = Field(..., min_length=4, description="La contraseña debe tener al menos 4 caracteres")
     dias_permitidos: str
     hora_inicio: str
     hora_fin: str
+    fecha_expiracion: Optional[str] = None
 
 # Esto es lo que FastAPI le va a devolver a React (incluye el ID, PIN y Estado)
 class AccessRequestResponse(BaseModel):
@@ -21,12 +25,15 @@ class AccessRequestResponse(BaseModel):
     carne: str
     dpi: str
     correo: str
+    rol: Optional[str] = "Estudiante"
+    usuario: Optional[str] = None
     dias_permitidos: str
     hora_inicio: str
     hora_fin: str
     pin_acceso: Optional[str] = None
     estado: str
     fecha_solicitud: datetime
+    fecha_expiracion: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -39,6 +46,10 @@ class AdminCreate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class UserLoginRequest(BaseModel):
+    usuario: str
+    password: str
 
 from pydantic import BaseModel, Field
 

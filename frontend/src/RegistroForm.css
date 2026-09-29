@@ -94,12 +94,59 @@
   background: var(--verde-oscuro);
 }
 
-/* --- ESTILOS DE CHIPS PARA DÍAS --- */
+/* --- ESTILOS DE CHIPS Y BOTONES PARA ROL --- */
 .chips-label {
   display: block;
   margin-bottom: 10px;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.8);
+}
+
+.rol-buttons-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.rol-btn {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.85);
+  padding: 12px 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.rol-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+}
+
+.rol-btn.active {
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.25), inset 0 0 12px rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.rol-icon {
+  font-size: 18px;
 }
 
 .chips-container {
