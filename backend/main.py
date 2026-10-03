@@ -33,17 +33,25 @@ def login_admin(admin_data: schemas.AdminCreate, db: Session = Depends(get_db)):
     admin = crud.get_admin(db, admin_data.username)
     if not admin or not auth.verify_password(admin_data.password, admin.hashed_password):
         raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
-    return {"mensaje": "Login exitoso", "username": admin.username}
+    
+    # Emitimos el Token JWT firmado para autorizar las operaciones del administrador
+    token = auth.create_access_token(data={"sub": admin.username, "role": "admin"})
+    return {
+        "mensaje": "Login exitoso",
+        "username": admin.username,
+        "access_token": token,
+        "token_type": "bearer"
+    }
 
 @app.get("/api/admin/me", response_model=schemas.AdminResponse)
-def get_admin_profile(username: str, db: Session = Depends(get_db)):
+def get_admin_profile(username: str, db: Session = Depends(get_db), current_admin: str = Depends(auth.get_current_admin)):
     admin = crud.get_admin(db, username)
     if not admin:
         raise HTTPException(status_code=404, detail="Admin no encontrado")
     return admin
 
 @app.put("/api/admin/profile")
-def update_profile(username: str, profile_data: schemas.AdminProfileUpdate, db: Session = Depends(get_db)):
+def update_profile(username: str, profile_data: schemas.AdminProfileUpdate, db: Session = Depends(get_db), current_admin: str = Depends(auth.get_current_admin)):
     admin = crud.update_admin_profile(db, username, profile_data.username, profile_data.full_name, profile_data.email)
     if not admin:
         raise HTTPException(status_code=404, detail="Admin no encontrado")
@@ -91,7 +99,7 @@ def reset_password(req: schemas.ResetPasswordRequest, db: Session = Depends(get_
     return {"mensaje": "Contraseña actualizada exitosamente"}
 
 @app.put("/api/admin/change-password")
-def change_password(username: str, req: schemas.ChangePasswordRequest, db: Session = Depends(get_db)):
+def change_password(username: str, req: schemas.ChangePasswordRequest, db: Session = Depends(get_db), current_admin: str = Depends(auth.get_current_admin)):
     admin = crud.get_admin(db, username)
     if not admin:
         raise HTTPException(status_code=404, detail="Admin no encontrado")
@@ -114,27 +122,29 @@ def crear_solicitud(solicitud: schemas.AccessRequestCreate, db: Session = Depend
         raise HTTPException(status_code=400, detail="Ocurrió un error al registrar la solicitud.")
     return db_request
 
+from typing import List
+
 # 2. Ruta para que el Panel Admin lea las solicitudes pendientes
-@app.get("/api/solicitudes/pendientes")
-def obtener_pendientes(db: Session = Depends(get_db)):
+@app.get("/api/solicitudes/pendientes", response_model=List[schemas.AccessRequestResponse])
+def obtener_pendientes(db: Session = Depends(get_db), current_admin: str = Depends(auth.get_current_admin)):
     return crud.get_pending_requests(db=db)
 
 # 2.5 Ruta para leer solicitudes aprobadas activas
-@app.get("/api/solicitudes/aprobadas")
-def obtener_aprobadas(db: Session = Depends(get_db)):
+@app.get("/api/solicitudes/aprobadas", response_model=List[schemas.AccessRequestResponse])
+def obtener_aprobadas(db: Session = Depends(get_db), current_admin: str = Depends(auth.get_current_admin)):
     return crud.get_approved_requests(db=db)
 
 # 2.6 Ruta para finalizar (eliminar) una solicitud aprobada
 @app.delete("/api/solicitudes/{solicitud_id}/finalizar")
-def finalizar_solicitud(solicitud_id: int, admin_username: str = "Admin", db: Session = Depends(get_db)):
+def finalizar_solicitud(solicitud_id: int, admin_username: str = "Admin", db: Session = Depends(get_db), current_admin: str = Depends(auth.get_current_admin)):
     exito = crud.delete_request(db, request_id=solicitud_id, admin_username=admin_username)
     if not exito:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
     return {"mensaje": "Solicitud finalizada y eliminada correctamente"}
 
 # 3. Ruta para que el Admin APROBÉ una solicitud (Genera el PIN y enviará el correo)
-@app.put("/api/solicitudes/{solicitud_id}/aprobar")
-def aprobar_solicitud(solicitud_id: int, admin_username: str = "Admin", db: Session = Depends(get_db)):
+@app.put("/api/solicitudes/{solicitud_id}/aprobar", response_model=schemas.AccessRequestResponse)
+def aprobar_solicitud(solicitud_id: int, admin_username: str = "Admin", db: Session = Depends(get_db), current_admin: str = Depends(auth.get_current_admin)):
     solicitud = crud.approve_request(db, request_id=solicitud_id, admin_username=admin_username)
     if not solicitud:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
@@ -147,7 +157,7 @@ def aprobar_solicitud(solicitud_id: int, admin_username: str = "Admin", db: Sess
 
 # 4. Ruta para Denegar
 @app.put("/api/solicitudes/{solicitud_id}/denegar")
-def denegar_solicitud(solicitud_id: int, admin_username: str = "Admin", db: Session = Depends(get_db)):
+def denegar_solicitud(solicitud_id: int, admin_username: str = "Admin", db: Session = Depends(get_db), current_admin: str = Depends(auth.get_current_admin)):
     solicitud = crud.deny_request(db, request_id=solicitud_id, admin_username=admin_username)
     if not solicitud:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
@@ -178,7 +188,7 @@ def validar_pin(datos: schemas.PINValidation, db: Session = Depends(get_db)):
 
 # 6. Ruta para obtener el Historial de Accesos en el Panel
 @app.get("/api/accesos/historial")
-def obtener_historial(db: Session = Depends(get_db)):
+def obtener_historial(db: Session = Depends(get_db), current_admin: str = Depends(auth.get_current_admin)):
     historial_db = crud.get_history(db)
     
     # Transformamos el modelo de DB al formato que espera el Frontend

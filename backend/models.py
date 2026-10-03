@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from database import Base
 import datetime
+import crypto_utils
 
 # 1. Tabla de Administradores
 class Admin(Base):
@@ -28,10 +29,21 @@ class AccessRequest(Base):
     dias_permitidos = Column(String) # Ej: "Lunes,Miercoles"
     hora_inicio = Column(String) # Ej: "13:00"
     hora_fin = Column(String) # Ej: "16:00"
-    pin_acceso = Column(String, nullable=True) # Estará vacío hasta que lo aprobemos
+    _pin_acceso = Column("pin_acceso", String, nullable=True) # Almacenado cifrado en reposo con Fernet
     estado = Column(String, default="PENDIENTE") # Puede ser PENDIENTE, APROBADA, DENEGADA
     fecha_solicitud = Column(DateTime, default=datetime.datetime.utcnow)
     fecha_expiracion = Column(String, nullable=True) # ISO Date format YYYY-MM-DD
+
+    @property
+    def pin_acceso(self):
+        return crypto_utils.decrypt_pin(self._pin_acceso)
+
+    @pin_acceso.setter
+    def pin_acceso(self, value):
+        if value and not crypto_utils.is_encrypted(value):
+            self._pin_acceso = crypto_utils.encrypt_pin(value)
+        else:
+            self._pin_acceso = value
 
 # 3. Tabla de Auditoría e Historial
 class AccessHistory(Base):

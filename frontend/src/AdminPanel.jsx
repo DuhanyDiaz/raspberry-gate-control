@@ -23,14 +23,28 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   const [solicitudes, setSolicitudes] = useState([])
   const [aprobadas, setAprobadas] = useState([])
   const [historial, setHistorial] = useState([])
+  const [adminToken, setAdminToken] = useState(localStorage.getItem('admin_token') || '')
+
+  const getAuthHeaders = (extra = {}) => {
+    const t = adminToken || localStorage.getItem('admin_token')
+    return {
+      ...extra,
+      ...(t ? { 'Authorization': `Bearer ${t}` } : {})
+    }
+  }
 
   // Función para descargar las solicitudes desde Python
   const cargarSolicitudes = async () => {
     try {
-      const respuesta = await fetch("http://127.0.0.1:8000/api/solicitudes/pendientes")
+      const respuesta = await fetch("http://127.0.0.1:8000/api/solicitudes/pendientes", {
+        headers: getAuthHeaders()
+      })
       if (respuesta.ok) {
         const datos = await respuesta.json()
         setSolicitudes(datos)
+      } else if (respuesta.status === 401) {
+        setSesionIniciada(false)
+        localStorage.removeItem('admin_token')
       }
     } catch (error) {
       console.error("Error al cargar solicitudes:", error)
@@ -39,10 +53,15 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
 
   const cargarAprobadas = async () => {
     try {
-      const respuesta = await fetch("http://127.0.0.1:8000/api/solicitudes/aprobadas")
+      const respuesta = await fetch("http://127.0.0.1:8000/api/solicitudes/aprobadas", {
+        headers: getAuthHeaders()
+      })
       if (respuesta.ok) {
         const datos = await respuesta.json()
         setAprobadas(datos)
+      } else if (respuesta.status === 401) {
+        setSesionIniciada(false)
+        localStorage.removeItem('admin_token')
       }
     } catch (error) {
       console.error("Error al cargar aprobadas:", error)
@@ -52,10 +71,15 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   // Función para descargar el historial de accesos
   const cargarHistorial = async () => {
     try {
-      const respuesta = await fetch("http://127.0.0.1:8000/api/accesos/historial")
+      const respuesta = await fetch("http://127.0.0.1:8000/api/accesos/historial", {
+        headers: getAuthHeaders()
+      })
       if (respuesta.ok) {
         const datos = await respuesta.json()
         setHistorial(datos)
+      } else if (respuesta.status === 401) {
+        setSesionIniciada(false)
+        localStorage.removeItem('admin_token')
       }
     } catch (error) {
       console.error("Error al cargar el historial:", error)
@@ -74,7 +98,9 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
 
   const cargarPerfil = async () => {
     try {
-      const resp = await fetch(`http://127.0.0.1:8000/api/admin/me?username=${usuario}`)
+      const resp = await fetch(`http://127.0.0.1:8000/api/admin/me?username=${usuario}`, {
+        headers: getAuthHeaders()
+      })
       if (resp.ok) {
         const data = await resp.json()
         setAdminProfile({ username: data.username || '', full_name: data.full_name || '', email: data.email || '' })
@@ -96,7 +122,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
     try {
       const resp = await fetch(`http://127.0.0.1:8000/api/admin/profile?username=${usuario}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(adminProfile)
       })
       if (resp.ok) {
@@ -111,7 +137,10 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   // Botón Aprobar
   const manejarAprobar = async (id, nombre) => {
     try {
-      const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/aprobar?admin_username=${usuario}`, { method: "PUT" })
+      const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/aprobar?admin_username=${usuario}`, {
+        method: "PUT",
+        headers: getAuthHeaders()
+      })
       if (respuesta.ok) {
         Swal.fire({
           icon: 'success',
@@ -131,7 +160,10 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   // Botón Denegar
   const manejarDenegar = async (id, nombre) => {
     try {
-      const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/denegar?admin_username=${usuario}`, { method: "PUT" })
+      const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/denegar?admin_username=${usuario}`, {
+        method: "PUT",
+        headers: getAuthHeaders()
+      })
       if (respuesta.ok) {
         Swal.fire({
           icon: 'info',
@@ -161,7 +193,10 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
 
     if (result.isConfirmed) {
       try {
-        const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/finalizar?admin_username=${usuario}`, { method: "DELETE" })
+        const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/finalizar?admin_username=${usuario}`, {
+          method: "DELETE",
+          headers: getAuthHeaders()
+        })
         if (respuesta.ok) {
           Swal.fire('Finalizado', `El acceso de ${nombre} ha sido eliminado.`, 'success')
           cargarAprobadas()
@@ -183,6 +218,11 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
       })
 
       if (respuesta.ok) {
+        const datos = await respuesta.json()
+        if (datos.access_token) {
+          setAdminToken(datos.access_token)
+          localStorage.setItem('admin_token', datos.access_token)
+        }
         setSesionIniciada(true)
       } else {
         Swal.fire({
@@ -270,7 +310,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
         try {
           const resp = await fetch(`http://127.0.0.1:8000/api/admin/change-password?username=${usuario}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ current_password: result.value.current, new_password: result.value.newPass })
           })
 
@@ -304,6 +344,8 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
       })
       setPestañaActiva('perfil')
     } else {
+      setAdminToken('')
+      localStorage.removeItem('admin_token')
       setSesionIniciada(false)
       setUsuario('')
       setPassword('')
