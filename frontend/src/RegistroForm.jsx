@@ -26,7 +26,9 @@ export default function RegistroForm({ onVolver }) {
   const [dateRange, setDateRange] = useState([null, null])
   const [startDate, endDate] = dateRange
 
-  // Funciones para formatear horas
+  // --- NUEVO ESTADO PARA EL WIZARD ---
+  const [pasoActual, setPasoActual] = useState(1) 
+
   const format12h = (hour) => {
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const h = hour % 12 || 12;
@@ -37,7 +39,6 @@ export default function RegistroForm({ onVolver }) {
     return `${hour.toString().padStart(2, '0')}:00`;
   };
 
-  // Función genérica para guardar lo que se escribe en el estado
   const manejarCambio = (e) => {
     setDatos({
       ...datos,
@@ -45,84 +46,47 @@ export default function RegistroForm({ onVolver }) {
     })
   }
 
-  // Función cuando le dan "Enviar Solicitud"
+  // --- VALIDACIÓN POR PASOS ---
+  const avanzarPaso = () => {
+    if (pasoActual === 1) {
+      const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+      if (!datos.nombres || !regexLetras.test(datos.nombres)) {
+        return Swal.fire({ icon: 'warning', text: 'El nombre solo puede contener letras y espacios.' });
+      }
+      const regexDPI = /^\d{13}$/;
+      if (!datos.dpi || !regexDPI.test(datos.dpi)) {
+        return Swal.fire({ icon: 'warning', text: 'El DPI debe tener exactamente 13 números.' });
+      }
+      const regexCarne = /^\d{9}$/;
+      if (!datos.carne || !regexCarne.test(datos.carne)) {
+        return Swal.fire({ icon: 'warning', text: 'El carné debe tener exactamente 9 números.' });
+      }
+    } else if (pasoActual === 2) {
+      const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!datos.correo || !regexCorreo.test(datos.correo)) {
+        return Swal.fire({ icon: 'warning', text: 'Por favor, ingresa un correo válido.' });
+      }
+      const regexUsuario = /^[a-zA-Z0-9]+$/;
+      if (!datos.usuario || !regexUsuario.test(datos.usuario)) {
+        return Swal.fire({ icon: 'warning', text: 'El usuario solo puede contener letras y números.' });
+      }
+      if (!datos.password || datos.password.length < 4) {
+        return Swal.fire({ icon: 'warning', text: 'La contraseña debe tener al menos 4 caracteres.' });
+      }
+    }
+    // Si pasa las validaciones, va al siguiente paso
+    setPasoActual(pasoActual + 1);
+  };
+
+  const retrocederPaso = () => {
+    setPasoActual(pasoActual - 1);
+  };
+
   const enviarFormulario = async (e) => {
-    e.preventDefault() // Evita que la página se recargue
-
-    // --- VALIDACIÓN DE SEGURIDAD ---
-    const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
-    if (!regexLetras.test(datos.nombres)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Nombre Inválido',
-        text: 'El nombre solo puede contener letras y espacios. No se permiten números ni símbolos.',
-        confirmButtonColor: '#ff6b6b'
-      });
-      return; // Detiene la ejecución
-    }
-
-    const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!regexCorreo.test(datos.correo)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Correo Inválido',
-        text: 'Por favor, ingresa un correo electrónico real (ejemplo: alumno@gmail.com).',
-        confirmButtonColor: '#ff6b6b'
-      });
-      return;
-    }
-
-    const regexUsuario = /^[a-zA-Z0-9]+$/;
-    if (!regexUsuario.test(datos.usuario)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Usuario Inválido',
-        text: 'El nombre de usuario solo puede contener letras y números (sin espacios, símbolos o scripts).',
-        confirmButtonColor: '#ff6b6b'
-      });
-      return;
-    }
-
-    if (!datos.password || datos.password.length < 4) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Contraseña Inválida',
-        text: 'La contraseña debe tener al menos 4 caracteres.',
-        confirmButtonColor: '#ff6b6b'
-      });
-      return;
-    }
-
-    const regexCarne = /^\d{9}$/;
-    if (!regexCarne.test(datos.carne)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Carné Inválido',
-        text: 'El carné debe contener exactamente 9 números sin guiones.',
-        confirmButtonColor: '#ff6b6b'
-      });
-      return;
-    }
-
-    const regexDPI = /^\d{13}$/;
-    if (!regexDPI.test(datos.dpi)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'DPI Inválido',
-        text: 'El DPI debe contener exactamente 13 números sin espacios ni guiones.',
-        confirmButtonColor: '#ff6b6b'
-      });
-      return;
-    }
+    e.preventDefault() 
 
     if (!startDate) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Faltan fechas',
-        text: 'Por favor, selecciona un rango de fechas de acceso.',
-        confirmButtonColor: '#ff6b6b'
-      });
-      return;
+      return Swal.fire({ icon: 'warning', text: 'Por favor, selecciona un rango de fechas.' });
     }
 
     let diasTexto = '';
@@ -175,137 +139,149 @@ export default function RegistroForm({ onVolver }) {
   return (
     <div className="form-container">
       <h2>Solicitar Acceso</h2>
+      
+      {/* Indicador de progreso del Wizard */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px' }}>
+        <div style={{ width: '32px', height: '6px', borderRadius: '3px', background: pasoActual >= 1 ? '#ffffff' : 'rgba(255,255,255,0.3)', boxShadow: pasoActual >= 1 ? '0 0 6px rgba(255,255,255,0.5)' : 'none', transition: 'all 0.3s ease' }}></div>
+        <div style={{ width: '32px', height: '6px', borderRadius: '3px', background: pasoActual >= 2 ? '#ffffff' : 'rgba(255,255,255,0.3)', boxShadow: pasoActual >= 2 ? '0 0 6px rgba(255,255,255,0.5)' : 'none', transition: 'all 0.3s ease' }}></div>
+        <div style={{ width: '32px', height: '6px', borderRadius: '3px', background: pasoActual >= 3 ? '#ffffff' : 'rgba(255,255,255,0.3)', boxShadow: pasoActual >= 3 ? '0 0 6px rgba(255,255,255,0.5)' : 'none', transition: 'all 0.3s ease' }}></div>
+      </div>
+
       <form onSubmit={enviarFormulario}>
 
-        {/* SELECCIÓN DE ROL CON BOTONES */}
-        <div className="input-group">
-          <label className="chips-label">Tipo de Persona</label>
-          <div className="rol-buttons-container">
-            <button
-              type="button"
-              className={`rol-btn ${datos.rol === 'Estudiante' ? 'active' : ''}`}
-              onClick={() => setDatos({ ...datos, rol: 'Estudiante' })}
-            >
-              <span className="rol-icon"></span> Estudiante
-            </button>
-            <button
-              type="button"
-              className={`rol-btn ${datos.rol === 'Catedrático' ? 'active' : ''}`}
-              onClick={() => setDatos({ ...datos, rol: 'Catedrático' })}
-            >
-              <span className="rol-icon"></span> Catedrático
-            </button>
-            <button
-              type="button"
-              className={`rol-btn ${datos.rol === 'Dirección' ? 'active' : ''}`}
-              onClick={() => setDatos({ ...datos, rol: 'Dirección' })}
-            >
-              <span className="rol-icon"></span> Dirección
-            </button>
-          </div>
-        </div>
-
-        <div className="input-group">
-          <input type="text" name="nombres" placeholder="Nombres y Apellidos Completos" required onChange={manejarCambio} />
-        </div>
-
-        {/* FILA CON USUARIO Y CONTRASEÑA DE ACCESO */}
-        <div className="row-group">
-          <div className="input-group">
-            <input
-              type="text"
-              name="usuario"
-              placeholder="Usuario (Letras y Números)"
-              required
-              onChange={manejarCambio}
-              pattern="[a-zA-Z0-9]+"
-              title="Solo letras y números, sin espacios ni símbolos"
-              maxLength={20}
-            />
-          </div>
-          <div className="input-group">
-            <input
-              type="password"
-              name="password"
-              placeholder="Contraseña"
-              required
-              onChange={manejarCambio}
-              minLength={4}
-            />
-          </div>
-        </div>
-
-        <div className="input-group">
-          <input type="email" name="correo" placeholder="Correo Electrónico" required onChange={manejarCambio} />
-        </div>
-
-        <div className="row-group">
-          <div className="input-group">
-            <input type="number" name="dpi" placeholder="DPI" required onChange={manejarCambio} />
-          </div>
-          <div className="input-group">
-            <input type="number" name="carne" placeholder="Carné Estudiantil" required onChange={manejarCambio} />
-          </div>
-        </div>
-
-        <div className="input-group custom-datepicker-container">
-          <label className="chips-label">Días de acceso (Selecciona un rango de fechas)</label>
-          <DatePicker
-            selectsRange={true}
-            startDate={startDate}
-            endDate={endDate}
-            onChange={(update) => setDateRange(update)}
-            monthsShown={2}
-            locale={es}
-            dateFormat="dd MMM yyyy"
-            placeholderText="Selecciona fechas..."
-            className="date-picker-input"
-            isClearable={true}
-            popperPlacement="bottom-start"
-            popperModifiers={[
-              {
-                name: "preventOverflow",
-                options: {
-                  boundary: "window",
-                },
-              },
-            ]}
-          />
-        </div>
-
-        <div className="input-group">
-          <label className="chips-label">Horario de acceso</label>
-          <div className="slider-container">
-            <div className="slider-labels-top">
-              <span>08:00 AM</span>
-              <span>07:00 PM</span>
+        {/* PASO 1: Identidad */}
+        {pasoActual === 1 && (
+          <div style={{ animation: 'fadeIn 0.3s' }}>
+            <h3 style={{ fontSize: '16px', marginBottom: '15px', color: '#ffffff', fontWeight: '600', letterSpacing: '0.5px' }}>Paso 1: Identidad</h3>
+            <div className="input-group">
+              <label className="chips-label">Rol Institucional</label>
+              <div className="input-group">
+                <select 
+                  name="rol" 
+                  className="rol-select"
+                  value={datos.rol} 
+                  onChange={manejarCambio}
+                >
+                  <option value="Estudiante">Estudiante</option>
+                  <option value="Auxiliar">Auxiliar</option>
+                  <option value="Profesor">Profesor</option>
+                  <option value="Dirección">Dirección</option>
+                </select>
+              </div>
             </div>
 
-            <ReactSlider
-              className="horizontal-slider"
-              thumbClassName="slider-thumb"
-              trackClassName="slider-track"
-              min={8}
-              max={19}
-              value={horario}
-              onChange={(val) => setHorario(val)}
-              minDistance={1}
-              renderThumb={(props, state) => (
-                <div {...props}>
-                  <div className="thumb-label">{format12h(state.valueNow)}</div>
-                </div>
-              )}
-            />
-          </div>
+            <div className="input-group">
+              <input type="text" name="nombres" placeholder="Nombres y Apellidos Completos" value={datos.nombres} onChange={manejarCambio} />
+            </div>
 
-          <div className="rango-seleccionado-caja">
-            <span></span> Rango seleccionado: {format12h(horario[0])} - {format12h(horario[1])}
+            <div className="row-group">
+              <div className="input-group">
+                <input type="number" name="dpi" placeholder="DPI (13 dígitos)" value={datos.dpi} onChange={manejarCambio} />
+              </div>
+              <div className="input-group">
+                <input type="number" name="carne" placeholder="Carné (9 dígitos)" value={datos.carne} onChange={manejarCambio} />
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* PASO 2: Credenciales */}
+        {pasoActual === 2 && (
+          <div style={{ animation: 'fadeIn 0.3s' }}>
+            <h3 style={{ fontSize: '16px', marginBottom: '15px', color: '#ffffff', fontWeight: '600', letterSpacing: '0.5px' }}>Paso 2: Cuenta de Sistema</h3>
+            
+            <div className="input-group">
+              <input type="email" name="correo" placeholder="Correo Electrónico" value={datos.correo} onChange={manejarCambio} />
+            </div>
+
+            <div className="row-group">
+              <div className="input-group">
+                <input
+                  type="text"
+                  name="usuario"
+                  placeholder="Usuario (Letras y Números)"
+                  value={datos.usuario}
+                  onChange={manejarCambio}
+                />
+              </div>
+              <div className="input-group">
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Contraseña"
+                  value={datos.password}
+                  onChange={manejarCambio}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PASO 3: Fechas y Horarios */}
+        {pasoActual === 3 && (
+          <div style={{ animation: 'fadeIn 0.3s' }}>
+            <h3 style={{ fontSize: '16px', marginBottom: '15px', color: '#ffffff', fontWeight: '600', letterSpacing: '0.5px' }}>Paso 3: Permisos de Acceso</h3>
+            
+            <div className="input-group custom-datepicker-container">
+              <label className="chips-label">Días de acceso (Selecciona un rango)</label>
+              <DatePicker
+                selectsRange={true}
+                startDate={startDate}
+                endDate={endDate}
+                onChange={(update) => setDateRange(update)}
+                monthsShown={2}
+                locale={es}
+                dateFormat="dd MMM yyyy"
+                placeholderText="Selecciona fechas..."
+                className="date-picker-input"
+                isClearable={true}
+                popperPlacement="bottom-start"
+                popperModifiers={[
+                  { name: "preventOverflow", options: { boundary: "window" } },
+                ]}
+              />
+            </div>
+
+            <div className="input-group">
+              <label className="chips-label">Horario de acceso</label>
+              <div className="slider-container">
+                <div className="slider-labels-top">
+                  <span>08:00 AM</span>
+                  <span>07:00 PM</span>
+                </div>
+
+                <ReactSlider
+                  className="horizontal-slider"
+                  thumbClassName="slider-thumb"
+                  trackClassName="slider-track"
+                  min={8}
+                  max={19}
+                  value={horario}
+                  onChange={(val) => setHorario(val)}
+                  minDistance={1}
+                  renderThumb={(props, state) => (
+                    <div {...props}>
+                      <div className="thumb-label">{format12h(state.valueNow)}</div>
+                    </div>
+                  )}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="form-buttons">
-          <button type="button" onClick={onVolver} className="btn-cancel">Cancelar</button>
-          <button type="submit" className="btn-submit">Enviar Solicitud</button>
+          {pasoActual === 1 ? (
+            <button type="button" onClick={onVolver} className="btn-cancel">Cancelar</button>
+          ) : (
+            <button type="button" onClick={retrocederPaso} className="btn-cancel">Atrás</button>
+          )}
+
+          {pasoActual < 3 ? (
+            <button type="button" onClick={avanzarPaso} className="btn-submit">Siguiente</button>
+          ) : (
+            <button type="submit" className="btn-submit">Enviar Solicitud</button>
+          )}
         </div>
 
       </form>

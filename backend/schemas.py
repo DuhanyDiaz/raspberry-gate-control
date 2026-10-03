@@ -10,7 +10,7 @@ class AccessRequestCreate(BaseModel):
     carne: str = Field(pattern=r"^\d{9}$", description="El carné debe tener exactamente 9 dígitos numéricos")
     dpi: str = Field(pattern=r"^\d{13}$", description="El DPI debe tener exactamente 13 dígitos numéricos")
     correo: str = Field(pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$", description="Debe ser un correo electrónico válido")
-    rol: str = Field(default="Estudiante", pattern=r"^(Estudiante|Catedrático|Dirección)$", description="El rol debe ser Estudiante, Catedrático o Dirección")
+    rol: str = Field(default="Estudiante", pattern=r"^(Estudiante|Auxiliar|Profesor|Dirección)$", description="El rol debe ser Estudiante, Auxiliar, Profesor o Dirección")
     usuario: str = Field(..., min_length=3, max_length=20, pattern=r"^[a-zA-Z0-9]+$", description="El usuario solo puede contener letras y números")
     password: str = Field(..., min_length=4, description="La contraseña debe tener al menos 4 caracteres")
     dias_permitidos: str
