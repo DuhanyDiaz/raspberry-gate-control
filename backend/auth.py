@@ -37,8 +37,13 @@ def verify_recovery_key(plain_key: str, hashed_key: str) -> bool:
         return False
     return hash_recovery_key(plain_key) == hashed_key
 
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, HTTPException, status
+
+security = HTTPBearer(auto_error=False)
+
 # Función para generar la "llave digital" (Token) cuando el Admin inicia sesión
-def create_access_token(data: dict):
+def create_access_token(data: dict) -> str:
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
@@ -46,3 +51,29 @@ def create_access_token(data: dict):
     # Creamos el Token firmado con nuestra llave secreta
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+# Dependencia para proteger endpoints administrativos
+def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    if not credentials or not credentials.credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Acceso no autorizado. Se requiere un Token JWT de Administrador válido.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if not username:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token de acceso inválido.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return username
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido o expirado. Inicia sesión nuevamente.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )

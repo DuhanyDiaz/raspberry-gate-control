@@ -168,11 +168,17 @@ def deny_request(db: Session, request_id: int, admin_username: str = "Admin"):
 
 # Validar un PIN en la cerradura
 def validate_pin(db: Session, pin: str):
-    # Buscamos una solicitud aprobada que tenga este PIN
-    return db.query(models.AccessRequest).filter(
-        models.AccessRequest.pin_acceso == pin,
+    # Obtenemos las solicitudes aprobadas
+    solicitudes_aprobadas = db.query(models.AccessRequest).filter(
         models.AccessRequest.estado == "APROBADA"
-    ).first()
+    ).all()
+    
+    # Comparamos el PIN ingresado con el PIN descifrado de cada solicitud
+    pin_limpio = str(pin).strip()
+    for req in solicitudes_aprobadas:
+        if req.pin_acceso == pin_limpio:
+            return req
+    return None
 
 # Registrar intento en el historial
 def log_access(db: Session, carne: str, exito: bool):
