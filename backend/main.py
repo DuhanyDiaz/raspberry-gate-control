@@ -61,7 +61,8 @@ def forgot_password(req: schemas.ForgotPasswordRequest, db: Session = Depends(ge
     
     # Generar llave de 6 caracteres
     key = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-    crud.set_recovery_key(db, admin.username, key)
+    key_hash = auth.hash_recovery_key(key)
+    crud.set_recovery_key(db, admin.username, key_hash)
     
     print(f"\n=======================================================")
     print(f"📧 [CORREO SIMULADO] Para: {admin.email or 'CORREO_NO_CONFIGURADO'}")
@@ -73,8 +74,13 @@ def forgot_password(req: schemas.ForgotPasswordRequest, db: Session = Depends(ge
 
 @app.post("/api/admin/reset-password")
 def reset_password(req: schemas.ResetPasswordRequest, db: Session = Depends(get_db)):
-    # Buscar qué admin tiene esta llave
-    admin = db.query(models.Admin).filter(models.Admin.recovery_key == req.recovery_key).first()
+    # Calculamos el hash de la llave recibida
+    key_hash = auth.hash_recovery_key(req.recovery_key)
+    
+    # Buscar qué admin tiene el hash de esta llave (o soporte retrocompatible)
+    admin = db.query(models.Admin).filter(
+        (models.Admin.recovery_key == key_hash) | (models.Admin.recovery_key == req.recovery_key)
+    ).first()
     if not admin:
         raise HTTPException(status_code=400, detail="Llave de recuperación inválida o expirada")
     

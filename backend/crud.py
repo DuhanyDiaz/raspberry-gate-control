@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 import models
 import schemas
+import auth
 import random
 from datetime import datetime
 
@@ -18,10 +19,10 @@ def update_admin_profile(db: Session, current_username: str, new_username: str, 
         db.refresh(admin)
     return admin
 
-def set_recovery_key(db: Session, username: str, key: str):
+def set_recovery_key(db: Session, username: str, key_hash: str):
     admin = get_admin(db, username)
     if admin:
-        admin.recovery_key = key
+        admin.recovery_key = key_hash
         db.commit()
         db.refresh(admin)
     return admin
@@ -42,12 +43,20 @@ def change_admin_password(db: Session, username: str, new_password_hashed: str):
         db.commit()
         db.refresh(admin)
     return admin
+
 def authenticate_user(db: Session, usuario: str, password: str):
     user_request = db.query(models.AccessRequest).filter(
-        models.AccessRequest.usuario == usuario,
-        models.AccessRequest.password == password
+        models.AccessRequest.usuario == usuario
     ).first()
-    return user_request
+    
+    if user_request and auth.verify_password(password, user_request.password):
+        # Migración automática si la contraseña todavía estaba en texto plano
+        if user_request.password and not user_request.password.startswith(("$2b$", "$2a$")):
+            user_request.password = auth.get_password_hash(password)
+            db.commit()
+            db.refresh(user_request)
+        return user_request
+    return None
 
 # Crear una solicitud nueva (cuando el alumno llena el formulario)
 def create_request(db: Session, request: schemas.AccessRequestCreate):
@@ -67,6 +76,9 @@ def create_request(db: Session, request: schemas.AccessRequestCreate):
     
     db.commit() # Aplicar los borrados si hubo
     
+    # Hasheamos la contraseña con Bcrypt antes de guardarla en la base de datos
+    hashed_pwd = auth.get_password_hash(request.password)
+
     db_request = models.AccessRequest(
         nombre=request.nombre,
         carne=request.carne,
@@ -74,7 +86,7 @@ def create_request(db: Session, request: schemas.AccessRequestCreate):
         correo=request.correo,
         rol=request.rol,
         usuario=request.usuario,
-        password=request.password,
+        password=hashed_pwd,
         dias_permitidos=request.dias_permitidos,
         hora_inicio=request.hora_inicio,
         hora_fin=request.hora_fin,
