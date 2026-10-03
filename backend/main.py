@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -6,6 +6,7 @@ import models
 import schemas
 import crud
 import auth
+import rate_limiter
 from database import engine, get_db
 
 # Esto obliga a SQLAlchemy a crear el archivo accesos_EMI.db y todas las tablas si no existen
@@ -29,11 +30,35 @@ def read_root():
 
 # --- RUTAS DE ADMINISTRADOR ---
 @app.post("/api/admin/login")
-def login_admin(admin_data: schemas.AdminCreate, db: Session = Depends(get_db)):
+def login_admin(admin_data: schemas.AdminCreate, request: Request, db: Session = Depends(get_db)):
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    key = f"admin_login:{client_ip}"
+
+    # 1. Comprobar si la IP está bloqueada por exceder 5 intentos fallidos
+    is_blocked, remaining = rate_limiter.limiter.check_is_blocked(key)
+    if is_blocked:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Has superado el límite de 5 intentos fallidos. Acceso bloqueado temporalmente por {remaining} segundos."
+        )
+
     admin = crud.get_admin(db, admin_data.username)
     if not admin or not auth.verify_password(admin_data.password, admin.hashed_password):
-        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+        now_blocked, remaining_attempts, block_seconds = rate_limiter.limiter.record_failure(key)
+        if now_blocked:
+            crud.log_admin_action(db, "SISTEMA", f"ALERTA: Bloqueo de login Admin por 5 intentos fallidos (IP: {client_ip})")
+            raise HTTPException(
+                status_code=429,
+                detail=f"Has superado el límite de 5 intentos. Bloqueado temporalmente por {block_seconds} segundos."
+            )
+        raise HTTPException(
+            status_code=401,
+            detail=f"Usuario o contraseña incorrectos. Intentos restantes: {remaining_attempts}"
+        )
     
+    # Éxito: reiniciamos el contador de fallos
+    rate_limiter.limiter.reset(key)
+
     # Emitimos el Token JWT firmado para autorizar las operaciones del administrador
     token = auth.create_access_token(data={"sub": admin.username, "role": "admin"})
     return {
@@ -164,27 +189,75 @@ def denegar_solicitud(solicitud_id: int, admin_username: str = "Admin", db: Sess
     return {"mensaje": "Solicitud denegada correctamente"}
 
 @app.post("/api/usuario/login", response_model=schemas.AccessRequestResponse)
-def login_usuario(datos: schemas.UserLoginRequest, db: Session = Depends(get_db)):
+def login_usuario(datos: schemas.UserLoginRequest, request: Request, db: Session = Depends(get_db)):
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    key = f"user_login:{client_ip}:{datos.usuario}"
+
+    is_blocked, remaining = rate_limiter.limiter.check_is_blocked(key)
+    if is_blocked:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Has superado el límite de 5 intentos fallidos. Acceso bloqueado temporalmente por {remaining} segundos."
+        )
+
     crud.cleanup_expired_requests(db) # Limpiar las expiradas al iniciar sesión
     solicitud = crud.authenticate_user(db, usuario=datos.usuario, password=datos.password)
     if not solicitud:
-        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+        now_blocked, remaining_attempts, block_seconds = rate_limiter.limiter.record_failure(key)
+        if now_blocked:
+            crud.log_admin_action(db, "SISTEMA", f"ALERTA: Bloqueo de login Usuario '{datos.usuario}' por 5 intentos fallidos (IP: {client_ip})")
+            raise HTTPException(
+                status_code=429,
+                detail=f"Has superado el límite de 5 intentos. Bloqueado temporalmente por {block_seconds} segundos."
+            )
+        raise HTTPException(
+            status_code=401,
+            detail=f"Usuario o contraseña incorrectos. Intentos restantes: {remaining_attempts}"
+        )
+
+    # Éxito: reiniciamos el contador de fallos
+    rate_limiter.limiter.reset(key)
     return solicitud
 
 # 5. Ruta para Validar PIN en el teclado
 @app.post("/api/accesos/validar")
-def validar_pin(datos: schemas.PINValidation, db: Session = Depends(get_db)):
+def validar_pin(datos: schemas.PINValidation, request: Request, db: Session = Depends(get_db)):
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    key = f"keypad_pin:{client_ip}"
+
+    # 1. Comprobar si el teclado está bloqueado por exceder 5 intentos fallidos
+    is_blocked, remaining = rate_limiter.limiter.check_is_blocked(key)
+    if is_blocked:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Teclado bloqueado por seguridad tras 5 intentos fallidos. Espere {remaining} segundos."
+        )
+
     crud.cleanup_expired_requests(db) # Limpiar las expiradas antes de validar el PIN
     solicitud = crud.validate_pin(db, pin=datos.pin)
     
     if solicitud:
-        # Registramos éxito
+        # Éxito: reiniciamos los intentos fallidos
+        rate_limiter.limiter.reset(key)
         crud.log_access(db, carne=solicitud.carne, exito=True)
         return {"mensaje": "Acceso Concedido", "nombre": solicitud.nombre}
     else:
+        # Fallo: registrar intento fallido en el limitador
+        now_blocked, remaining_attempts, block_seconds = rate_limiter.limiter.record_failure(key)
+        if now_blocked:
+            crud.log_admin_action(db, "SISTEMA", f"BLOQUEO TECLADO: 5 intentos fallidos consecutivos de PIN (IP: {client_ip})")
+            crud.log_access(db, carne="BLOQUEO_FUERZA_BRUTA", exito=False)
+            raise HTTPException(
+                status_code=429,
+                detail=f"Has superado el límite de 5 intentos fallidos. Teclado bloqueado por {block_seconds} segundos."
+            )
+
         # Registramos fallo (no sabemos de quién es el PIN porque es incorrecto)
         crud.log_access(db, carne="PIN_INVÁLIDO", exito=False)
-        raise HTTPException(status_code=401, detail="PIN incorrecto o inactivo")
+        raise HTTPException(
+            status_code=401,
+            detail=f"PIN incorrecto o inactivo. Te quedan {remaining_attempts} intento(s)."
+        )
 
 # 6. Ruta para obtener el Historial de Accesos en el Panel
 @app.get("/api/accesos/historial")

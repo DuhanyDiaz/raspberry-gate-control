@@ -45,11 +45,20 @@ export default function Keypad() {
             text: `Bienvenido(a), ${datos.nombre}`,
             confirmButtonColor: '#2a7a43'
           })
+        } else if (respuesta.status === 429) {
+          const errorData = await respuesta.json()
+          Swal.fire({
+            icon: 'warning',
+            title: '¡Teclado Bloqueado!',
+            text: errorData.detail || 'Has superado el límite de 5 intentos fallidos. Teclado bloqueado temporalmente por seguridad.',
+            confirmButtonColor: '#d33'
+          })
         } else {
+          const errorData = await respuesta.json()
           Swal.fire({
             icon: 'error',
             title: 'Acceso Denegado',
-            text: 'PIN incorrecto o inactivo.',
+            text: errorData.detail || 'PIN incorrecto o inactivo.',
             confirmButtonColor: '#ff6b6b'
           })
         }
