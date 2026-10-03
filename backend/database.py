@@ -1,8 +1,11 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Le decimos a SQLite que guarde todo en un archivo llamado "accesos_EMI.db"
-SQLALCHEMY_DATABASE_URL = "sqlite:///./accesos_EMI.db"
+# Ruta absoluta al archivo accesos_EMI.db en el directorio del backend
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = os.path.join(BASE_DIR, "accesos_EMI.db")
+SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_FILE}"
 
 # Configuramos el motor. 
 # check_same_thread=False es necesario en SQLite cuando usamos FastAPI
