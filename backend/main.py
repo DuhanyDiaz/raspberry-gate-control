@@ -7,11 +7,28 @@ import schemas
 import crud
 import auth
 import rate_limiter
-from database import engine, get_db
+from database import engine, get_db, SessionLocal
 from hardware import abrir_chapa
 
 # Esto obliga a SQLAlchemy a crear el archivo accesos_EMI.db y todas las tablas si no existen
 models.Base.metadata.create_all(bind=engine)
+
+# Asegurar la existencia de un usuario admin inicial (admin / admin)
+try:
+    with SessionLocal() as db_init:
+        admin_default = db_init.query(models.Admin).filter_by(username="admin").first()
+        if not admin_default:
+            admin_default = models.Admin(
+                username="admin",
+                hashed_password=auth.get_password_hash("admin"),
+                full_name="Administrador EMI",
+                email="admin@fiusac.edu.gt"
+            )
+            db_init.add(admin_default)
+            db_init.commit()
+            print("👤 [AUTH] Usuario admin inicial creado: admin / admin")
+except Exception as e:
+    print(f"⚠️ [AUTH] No se pudo verificar/crear el admin inicial: {e}")
 
 app = FastAPI(title="API Accesos EMI")
 
