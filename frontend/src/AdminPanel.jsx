@@ -3,6 +3,7 @@ import Swal from 'sweetalert2'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 import './AdminPanel.css'
+import { API_BASE_URL } from './apiConfig'
 
 export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada }) {
   const [usuario, setUsuario] = useState('')
@@ -36,7 +37,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   // Función para descargar las solicitudes desde Python
   const cargarSolicitudes = async () => {
     try {
-      const respuesta = await fetch("http://127.0.0.1:8000/api/solicitudes/pendientes", {
+      const respuesta = await fetch(`${API_BASE_URL}/api/solicitudes/pendientes`, {
         headers: getAuthHeaders()
       })
       if (respuesta.ok) {
@@ -53,7 +54,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
 
   const cargarAprobadas = async () => {
     try {
-      const respuesta = await fetch("http://127.0.0.1:8000/api/solicitudes/aprobadas", {
+      const respuesta = await fetch(`${API_BASE_URL}/api/solicitudes/aprobadas`, {
         headers: getAuthHeaders()
       })
       if (respuesta.ok) {
@@ -71,7 +72,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   // Función para descargar el historial de accesos
   const cargarHistorial = async () => {
     try {
-      const respuesta = await fetch("http://127.0.0.1:8000/api/accesos/historial", {
+      const respuesta = await fetch(`${API_BASE_URL}/api/accesos/historial`, {
         headers: getAuthHeaders()
       })
       if (respuesta.ok) {
@@ -98,7 +99,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
 
   const cargarPerfil = async () => {
     try {
-      const resp = await fetch(`http://127.0.0.1:8000/api/admin/me?username=${usuario}`, {
+      const resp = await fetch(`${API_BASE_URL}/api/admin/me?username=${usuario}`, {
         headers: getAuthHeaders()
       })
       if (resp.ok) {
@@ -120,7 +121,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   const guardarPerfil = async (e) => {
     e.preventDefault()
     try {
-      const resp = await fetch(`http://127.0.0.1:8000/api/admin/profile?username=${usuario}`, {
+      const resp = await fetch(`${API_BASE_URL}/api/admin/profile?username=${usuario}`, {
         method: 'PUT',
         headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(adminProfile)
@@ -137,7 +138,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   // Botón Aprobar
   const manejarAprobar = async (id, nombre) => {
     try {
-      const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/aprobar?admin_username=${usuario}`, {
+      const respuesta = await fetch(`${API_BASE_URL}/api/solicitudes/${id}/aprobar?admin_username=${usuario}`, {
         method: "PUT",
         headers: getAuthHeaders()
       })
@@ -160,7 +161,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   // Botón Denegar
   const manejarDenegar = async (id, nombre) => {
     try {
-      const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/denegar?admin_username=${usuario}`, {
+      const respuesta = await fetch(`${API_BASE_URL}/api/solicitudes/${id}/denegar?admin_username=${usuario}`, {
         method: "PUT",
         headers: getAuthHeaders()
       })
@@ -193,7 +194,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
 
     if (result.isConfirmed) {
       try {
-        const respuesta = await fetch(`http://127.0.0.1:8000/api/solicitudes/${id}/finalizar?admin_username=${usuario}`, {
+        const respuesta = await fetch(`${API_BASE_URL}/api/solicitudes/${id}/finalizar?admin_username=${usuario}`, {
           method: "DELETE",
           headers: getAuthHeaders()
         })
@@ -211,7 +212,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   const manejarLogin = async (e) => {
     e.preventDefault()
     try {
-      const respuesta = await fetch("http://127.0.0.1:8000/api/admin/login", {
+      const respuesta = await fetch(`${API_BASE_URL}/api/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: usuario, password: password })
@@ -240,7 +241,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   const manejarOlvidoPassword = async (e) => {
     e.preventDefault()
     try {
-      const respuesta = await fetch("http://127.0.0.1:8000/api/admin/forgot-password", {
+      const respuesta = await fetch(`${API_BASE_URL}/api/admin/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: recoveryUsuario })
@@ -257,7 +258,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
   const manejarResetPassword = async (e) => {
     e.preventDefault()
     try {
-      const respuesta = await fetch("http://127.0.0.1:8000/api/admin/reset-password", {
+      const respuesta = await fetch(`${API_BASE_URL}/api/admin/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ recovery_key: recoveryKey, new_password: nuevaPassword })
@@ -308,7 +309,7 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const resp = await fetch(`http://127.0.0.1:8000/api/admin/change-password?username=${usuario}`, {
+          const resp = await fetch(`${API_BASE_URL}/api/admin/change-password?username=${usuario}`, {
             method: 'PUT',
             headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ current_password: result.value.current, new_password: result.value.newPass })

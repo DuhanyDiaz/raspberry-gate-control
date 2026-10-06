@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Swal from 'sweetalert2'
 import './UserPortal.css'
+import { API_BASE_URL } from './apiConfig'
 
 export default function UserPortal({ onVolver }) {
   const [usuario, setUsuario] = useState('')
@@ -10,7 +11,7 @@ export default function UserPortal({ onVolver }) {
   const manejarLogin = async (e) => {
     e.preventDefault()
     try {
-      const respuesta = await fetch("http://127.0.0.1:8000/api/usuario/login", {
+      const respuesta = await fetch(`${API_BASE_URL}/api/usuario/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ usuario, password })

@@ -6,6 +6,7 @@ import "react-datepicker/dist/react-datepicker.css"
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import './RegistroForm.css'
+import { API_BASE_URL } from './apiConfig'
 
 export default function RegistroForm({ onVolver }) {
   // Estado para guardar todo lo que el usuario escribe
@@ -113,7 +114,7 @@ export default function RegistroForm({ onVolver }) {
 
     try {
       // 2. Usamos fetch para conectarnos a tu servidor de FastAPI
-      const respuesta = await fetch("http://127.0.0.1:8000/api/solicitudes", {
+      const respuesta = await fetch(`${API_BASE_URL}/api/solicitudes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

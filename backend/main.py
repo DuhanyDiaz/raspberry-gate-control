@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi import FastAPI, Depends, HTTPException, status, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -8,6 +8,7 @@ import crud
 import auth
 import rate_limiter
 from database import engine, get_db
+from hardware import abrir_chapa
 
 # Esto obliga a SQLAlchemy a crear el archivo accesos_EMI.db y todas las tablas si no existen
 models.Base.metadata.create_all(bind=engine)
@@ -221,7 +222,7 @@ def login_usuario(datos: schemas.UserLoginRequest, request: Request, db: Session
 
 # 5. Ruta para Validar PIN en el teclado
 @app.post("/api/accesos/validar")
-def validar_pin(datos: schemas.PINValidation, request: Request, db: Session = Depends(get_db)):
+def validar_pin(datos: schemas.PINValidation, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     client_ip = request.client.host if request.client else "127.0.0.1"
     key = f"keypad_pin:{client_ip}"
 
@@ -240,6 +241,8 @@ def validar_pin(datos: schemas.PINValidation, request: Request, db: Session = De
         # Éxito: reiniciamos los intentos fallidos
         rate_limiter.limiter.reset(key)
         crud.log_access(db, carne=solicitud.carne, exito=True)
+        # Activar el relé físico de la chapa en segundo plano sin demorar la respuesta HTTP
+        background_tasks.add_task(abrir_chapa)
         return {"mensaje": "Acceso Concedido", "nombre": solicitud.nombre}
     else:
         # Fallo: registrar intento fallido en el limitador

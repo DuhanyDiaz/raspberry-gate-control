@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Swal from 'sweetalert2'
 import './Keypad.css'
+import { API_BASE_URL } from './apiConfig'
 
 export default function Keypad() {
   const [pin, setPin] = useState('')
@@ -31,7 +32,7 @@ export default function Keypad() {
       })
 
       try {
-        const respuesta = await fetch("http://127.0.0.1:8000/api/accesos/validar", {
+        const respuesta = await fetch(`${API_BASE_URL}/api/accesos/validar`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pin: pin })
