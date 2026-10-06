@@ -1,4 +1,4 @@
-# 🚀 Guía de Arranque Rápido: Control de Accesos EMI
+#  Guía de Arranque Rápido: Control de Accesos EMI
 
 Este documento contiene las instrucciones paso a paso para levantar ambos servidores (Backend y Frontend) en tu computadora de desarrollo. 
 
@@ -6,7 +6,7 @@ El proyecto consta de dos partes separadas que deben correr al mismo tiempo en d
 
 ---
 
-## 1️⃣ Levantar el Servidor Python (Backend)
+## 1️ Levantar el Servidor Python (Backend)
 
 El backend expone la API y se conecta con la base de datos SQLite. Debes ejecutarlo dentro de su entorno virtual.
 
@@ -27,7 +27,7 @@ El backend expone la API y se conecta con la base de datos SQLite. Debes ejecuta
 
 ---
 
-## 2️⃣ Levantar el Servidor React (Frontend)
+## 2️ Levantar el Servidor React (Frontend)
 
 El frontend maneja la interfaz gráfica y se conecta al backend localmente.
 
@@ -44,6 +44,6 @@ El frontend maneja la interfaz gráfica y se conecta al backend localmente.
 
 ---
 
-## 🛑 Cómo detener los servidores
+##  Cómo detener los servidores
 Cuando termines de trabajar, simplemente ve a cada terminal y presiona la combinación de teclas:
 `Control + C`

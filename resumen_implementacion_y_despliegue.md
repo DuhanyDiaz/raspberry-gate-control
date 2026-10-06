@@ -1,11 +1,11 @@
-# 🛡️ Resumen Ejecutivo de Implementación de Seguridad y Hoja de Ruta de Despliegue IoT
+#  Resumen Ejecutivo de Implementación de Seguridad y Hoja de Ruta de Despliegue IoT
 **Proyecto:** Control de Accesos FIUSAC / Escuela de Ingeniería Mecánica Industrial (EMI)  
 **Fecha:** Octubre 2026  
 **Entorno:** Backend (FastAPI / Python), Frontend (React / Vite), IoT (Raspberry Pi Edge)
 
 ---
 
-## 📌 PARTE 1: Resumen de lo Implementado (Fases 1 a 5)
+##  PARTE 1: Resumen de lo Implementado (Fases 1 a 5)
 
 Durante las sesiones de trabajo se transformó por completo la seguridad y la gestión de datos sensibles del proyecto, mitigando vulnerabilidades críticas en reposo, en tránsito y frente a ataques de fuerza bruta.
 
@@ -83,7 +83,7 @@ Para garantizar disponibilidad 24/7 de forma gratuita, escalable y sin sobrecarg
 
 ---
 
-## 📋 Lista de Tareas para la Migración y Despliegue
+##  Lista de Tareas para la Migración y Despliegue
 
 ### Paso 1: Transición de Base de Datos (SQLite ➔ PostgreSQL)
 - [ ] Crear proyecto en **Supabase** o **Neon.tech** y obtener la URL de conexión `postgresql://...`.
