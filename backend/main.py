@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import FastAPI, Depends, HTTPException, status, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -9,6 +10,9 @@ import auth
 import rate_limiter
 from database import engine, get_db, SessionLocal
 from hardware import abrir_chapa
+
+# Cola de eventos de apertura para clientes IoT en red o en la nube
+pending_gate_unlocks = []
 
 # Esto obliga a SQLAlchemy a crear el archivo accesos_EMI.db y todas las tablas si no existen
 models.Base.metadata.create_all(bind=engine)
@@ -26,9 +30,9 @@ try:
             )
             db_init.add(admin_default)
             db_init.commit()
-            print("👤 [AUTH] Usuario admin inicial creado: admin / admin")
+            print("[AUTH] Usuario admin inicial creado: admin / admin")
 except Exception as e:
-    print(f"⚠️ [AUTH] No se pudo verificar/crear el admin inicial: {e}")
+    print(f"[AUTH] No se pudo verificar o crear el admin inicial: {e}")
 
 app = FastAPI(title="API Accesos EMI")
 
@@ -258,7 +262,13 @@ def validar_pin(datos: schemas.PINValidation, request: Request, background_tasks
         # Éxito: reiniciamos los intentos fallidos
         rate_limiter.limiter.reset(key)
         crud.log_access(db, carne=solicitud.carne, exito=True)
-        # Activar el relé físico de la chapa en segundo plano sin demorar la respuesta HTTP
+        # 1. Encolar evento para el cliente Edge IoT (Raspberry Pi en la nube)
+        pending_gate_unlocks.append({
+            "nombre": solicitud.nombre,
+            "carne": solicitud.carne,
+            "timestamp": datetime.utcnow().isoformat()
+        })
+        # 2. Si corre directamente en la Raspberry Pi física, activar GPIO de inmediato
         background_tasks.add_task(abrir_chapa)
         return {"mensaje": "Acceso Concedido", "nombre": solicitud.nombre}
     else:
@@ -311,3 +321,17 @@ def obtener_historial(db: Session = Depends(get_db), current_admin: str = Depend
         })
         
     return respuesta
+
+# 7. Endpoint para el cliente Edge IoT (Raspberry Pi en la puerta)
+@app.get("/api/iot/poll")
+def poll_iot_commands():
+    """
+    Permite que la Raspberry Pi pregunte a la nube cada 1-2 segundos si hay órdenes de apertura.
+    Si hay una orden pendiente, la extrae y le ordena al relé abrir la puerta.
+    """
+    global pending_gate_unlocks
+    if pending_gate_unlocks:
+        comando = pending_gate_unlocks.pop(0)
+        return {"abrir": True, "detalles": comando}
+    return {"abrir": False}
+

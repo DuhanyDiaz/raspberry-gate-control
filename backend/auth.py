@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
+import os
 from passlib.context import CryptContext
 import jwt
 
-# Llave secreta para firmar los tokens (en un proyecto real esto va en un archivo oculto .env)
-SECRET_KEY = "fiusac_super_secreta_llave_iot_2026"
+# Llave secreta para firmar los tokens (se puede sobreescribir con variable de entorno)
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "fiusac_super_secreta_llave_iot_2026")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 # El administrador será deslogueado automáticamente en 1 hora por seguridad
 

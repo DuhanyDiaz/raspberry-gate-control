@@ -2,16 +2,26 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Ruta absoluta al archivo accesos_EMI.db en el directorio del backend
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_FILE = os.path.join(BASE_DIR, "accesos_EMI.db")
-SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_FILE}"
+# Leemos DATABASE_URL desde variables de entorno (Supabase / Render / Producción)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Configuramos el motor. 
-# check_same_thread=False es necesario en SQLite cuando usamos FastAPI
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
+if DATABASE_URL:
+    # Algunos proveedores como Render usan 'postgres://', SQLAlchemy requiere 'postgresql://'
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True
+    )
+else:
+    # Fallback a SQLite local si no hay variable de entorno
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DB_FILE = os.path.join(BASE_DIR, "accesos_EMI.db")
+    SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_FILE}"
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
