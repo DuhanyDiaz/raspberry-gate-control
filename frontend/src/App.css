@@ -8,10 +8,17 @@
   --gris-texto: #4a4a4a;
 }
 
-body {
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
   margin: 0;
+  padding: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: transparent;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
 }
 
 .app-container {
@@ -218,5 +225,9 @@ body {
     font-size: 14px;
     margin-bottom: 20px;
     padding: 0 15px;
+  }
+
+  input, select, textarea {
+    font-size: 16px !important;
   }
 }

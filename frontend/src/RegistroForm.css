@@ -391,3 +391,32 @@
 .react-datepicker__day--outside-month {
   color: rgba(255, 255, 255, 0.2) !important;
 }
+
+/* --- RESPONSIVIDAD PARA MÓVILES --- */
+@media (max-width: 600px) {
+  .form-container {
+    padding: 20px 14px;
+    border-radius: 16px;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .row-group {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .chips-container {
+    gap: 6px;
+  }
+
+  .chip {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .form-buttons {
+    margin-top: 18px;
+    gap: 10px;
+  }
+}

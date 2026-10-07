@@ -12,6 +12,9 @@
   width: 100%;
   max-width: 280px; /* Reducido de 350px a 280px */
   margin: 0 auto;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .pin-display {
@@ -46,6 +49,9 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 10px; /* Reducido de 15px */
   width: 100%;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .key-btn {
@@ -61,6 +67,10 @@
   justify-content: center;
   align-items: center;
   aspect-ratio: 1 / 1;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .key-btn:hover {

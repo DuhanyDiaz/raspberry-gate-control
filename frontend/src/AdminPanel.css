@@ -113,6 +113,10 @@
 .table-container {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 10px;
+  border-radius: 12px;
+  scrollbar-width: thin;
 }
 
 .table-container h3 {
@@ -123,9 +127,10 @@
 
 table {
   width: 100%;
+  min-width: 700px; /* Evita que las columnas se aplasten en pantallas pequeñas */
   border-collapse: collapse;
   margin-top: 10px;
-  font-size: 15px;
+  font-size: 14px;
   background-color: #ffffff;
   color: #333333;
   border-radius: 8px;
@@ -156,8 +161,16 @@ tr:hover {
 /* --- ESTILOS PARA LAS PESTAÑAS --- */
 .admin-tabs {
   display: flex;
-  gap: 15px;
+  gap: 12px;
   margin-bottom: 20px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+}
+
+.admin-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-btn {
@@ -382,4 +395,154 @@ tr:hover {
   border: none;
   box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
   text-shadow: none;
+}
+
+/* --- ESTILOS DE PERFIL DE ADMINISTRADOR --- */
+.profile-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0 20px 0;
+  box-sizing: border-box;
+}
+
+.profile-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 35px 30px;
+  width: 100%;
+  max-width: 480px;
+  box-sizing: border-box;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.profile-card h3 {
+  color: #51cf66;
+  font-size: 24px;
+  margin: 0 0 10px 0;
+  font-weight: 700;
+}
+
+.profile-card p {
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 25px 0;
+  font-size: 15px;
+}
+
+.profile-form {
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.profile-form .input-group {
+  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.profile-form label {
+  display: block;
+  margin-bottom: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.profile-form input {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+  font-size: 15px;
+  box-sizing: border-box;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.profile-form input:focus {
+  border-color: #51cf66;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 8px rgba(81, 207, 102, 0.4);
+}
+
+.admin-tabs .pushable {
+  margin-right: 0;
+}
+
+.pushable.full-width {
+  width: 100%;
+  margin-right: 0 !important;
+}
+
+.pushable.full-width .front {
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* --- RESPONSIVIDAD PARA MÓVILES --- */
+@media (max-width: 768px) {
+  .admin-dashboard,
+  .admin-container {
+    padding: 16px 12px;
+    border-radius: 16px;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .admin-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .admin-header h2 {
+    font-size: 20px;
+    text-align: center;
+  }
+
+  .admin-header > div:last-child {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .admin-tabs {
+    gap: 8px;
+    padding-bottom: 6px;
+  }
+
+  .admin-tabs .pushable .front {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  th,
+  td {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .pushable {
+    margin-right: 4px;
+  }
+
+  .pushable .front {
+    padding: 6px 10px;
+    font-size: 0.72rem;
+  }
+
+  .table-container {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
 }

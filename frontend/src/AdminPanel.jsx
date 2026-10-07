@@ -712,52 +712,49 @@ export default function AdminPanel({ onVolver, sesionIniciada, setSesionIniciada
       )}
 
       {pestañaActiva === 'perfil' && (
-        <div className="table-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '40px 20px' }}>
-          <h3 style={{ color: '#51cf66', fontSize: '24px', marginBottom: '10px' }}>Mi Perfil de Administrador</h3>
-          <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '30px' }}>
-            Configura tu usuario, nombre y correo electrónico.
-          </p>
-          <form onSubmit={guardarPerfil} style={{ width: '100%', maxWidth: '400px', textAlign: 'left' }}>
-            <div className="input-group" style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#fff', fontSize: '14px' }}>Nombre de Usuario (Login)</label>
-              <input
-                type="text"
-                value={adminProfile.username}
-                onChange={(e) => setAdminProfile({ ...adminProfile, username: e.target.value })}
-                required
-                pattern="^[a-zA-Z0-9_]+$"
-                title="El usuario solo puede contener letras, números y guiones bajos"
-                style={{ width: '100%', padding: '12px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(0,0,0,0.2)', color: 'white', boxSizing: 'border-box' }}
-              />
-            </div>
-            <div className="input-group" style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#fff', fontSize: '14px' }}>Nombre Completo</label>
-              <input
-                type="text"
-                value={adminProfile.full_name}
-                onChange={(e) => setAdminProfile({ ...adminProfile, full_name: e.target.value })}
-                required
-                style={{ width: '100%', padding: '12px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(0,0,0,0.2)', color: 'white', boxSizing: 'border-box' }}
-              />
-            </div>
-            <div className="input-group" style={{ marginBottom: '30px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#fff', fontSize: '14px' }}>Correo Electrónico</label>
-              <input
-                type="email"
-                value={adminProfile.email}
-                onChange={(e) => setAdminProfile({ ...adminProfile, email: e.target.value })}
-                required
-                pattern="^[\w\.-]+@[\w\.-]+\.\w+$"
-                title="Por favor, ingresa un correo electrónico válido"
-                style={{ width: '100%', padding: '12px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.4)', background: 'rgba(0,0,0,0.2)', color: 'white', boxSizing: 'border-box' }}
-              />
-            </div>
-            <button type="submit" className="pushable approve" style={{ width: '100%' }}>
-              <span className="shadow"></span>
-              <span className="edge"></span>
-              <span className="front" style={{ padding: '12px 42px' }}>Guardar Cambios</span>
-            </button>
-          </form>
+        <div className="profile-container">
+          <div className="profile-card">
+            <h3>Mi Perfil de Administrador</h3>
+            <p>Configura tu usuario, nombre y correo electrónico.</p>
+            <form onSubmit={guardarPerfil} className="profile-form">
+              <div className="input-group">
+                <label>Nombre de Usuario (Login)</label>
+                <input
+                  type="text"
+                  value={adminProfile.username}
+                  onChange={(e) => setAdminProfile({ ...adminProfile, username: e.target.value })}
+                  required
+                  pattern="^[a-zA-Z0-9_]+$"
+                  title="El usuario solo puede contener letras, números y guiones bajos"
+                />
+              </div>
+              <div className="input-group">
+                <label>Nombre Completo</label>
+                <input
+                  type="text"
+                  value={adminProfile.full_name}
+                  onChange={(e) => setAdminProfile({ ...adminProfile, full_name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="input-group">
+                <label>Correo Electrónico</label>
+                <input
+                  type="email"
+                  value={adminProfile.email}
+                  onChange={(e) => setAdminProfile({ ...adminProfile, email: e.target.value })}
+                  required
+                  pattern="^[\w\.-]+@[\w\.-]+\.\w+$"
+                  title="Por favor, ingresa un correo electrónico válido"
+                />
+              </div>
+              <button type="submit" className="pushable approve full-width">
+                <span className="shadow"></span>
+                <span className="edge"></span>
+                <span className="front">Guardar Cambios</span>
+              </button>
+            </form>
+          </div>
         </div>
       )}
     </div>

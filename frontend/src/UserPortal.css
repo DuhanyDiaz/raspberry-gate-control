@@ -103,3 +103,19 @@
 .user-info strong {
   color: #2a7a43;
 }
+
+/* --- RESPONSIVIDAD PARA MÓVILES --- */
+@media (max-width: 600px) {
+  .user-container,
+  .user-dashboard {
+    padding: 20px 14px;
+    border-radius: 16px;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .pin-number {
+    font-size: 34px;
+    letter-spacing: 8px;
+  }
+}
